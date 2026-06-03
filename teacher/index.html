@@ -5,6 +5,111 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSPCM — Преподаватель</title>
 <link rel="stylesheet" href="../css/style.css">
+<style>
+/* ── Topbar extras ── */
+.topbar { justify-content: space-between; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.topbar-bell {
+  position: relative; background: none; border: none;
+  color: var(--text-sub); font-size: 1.15rem;
+  padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.topbar-bell:hover { color: var(--primary); background: var(--primary-dim); }
+.bell-bubble {
+  position: absolute; top: 1px; right: 1px;
+  background: var(--danger); color: #fff;
+  font-size: .6rem; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; padding: 0 3px;
+}
+.bell-bubble.hidden { display: none; }
+
+/* ── Notifications ── */
+.notif-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s;
+}
+.notif-item:hover { background: rgba(255,255,255,.025); }
+.notif-item.unread { border-left: 3px solid var(--primary); background: rgba(255,179,0,.04); }
+.notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 6px; }
+.notif-dot.read { background: transparent; border: 1px solid rgba(255,255,255,.2); }
+.notif-title { font-weight: 600; font-size: .875rem; margin-bottom: 3px; }
+.notif-body  { font-size: .8rem; color: var(--text-sub); line-height: 1.5; }
+.notif-time  { font-size: .72rem; color: var(--text-sub); margin-top: 4px; }
+
+/* ── Chat ── */
+.chat-layout {
+  display: flex; height: calc(100vh - 120px);
+  background: var(--card); border-radius: 16px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.chat-sidebar { width: 280px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+.chat-sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: .85rem; color: var(--text-sub); flex-shrink: 0; }
+.chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.chat-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; cursor: pointer;
+  border-bottom: 1px solid var(--border); transition: background .15s;
+}
+.chat-item:hover { background: rgba(255,255,255,.04); }
+.chat-item.active { background: var(--primary-dim); }
+.chat-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; font-weight: 700; flex-shrink: 0; color: var(--primary);
+}
+.chat-item-name { font-weight: 600; font-size: .85rem; }
+.chat-item-preview { font-size: .75rem; color: var(--text-sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.chat-header { padding: 14px 18px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: .9rem; flex-shrink: 0; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.msg-bubble {
+  max-width: 68%; padding: 10px 14px; border-radius: 14px;
+  font-size: .875rem; line-height: 1.5; word-break: break-word;
+}
+.msg-bubble.mine { background: var(--primary); color: #000; align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg-bubble.theirs { background: rgba(255,255,255,.08); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg-time { font-size: .68rem; opacity: .55; margin-top: 3px; }
+.msg-sender { font-size: .72rem; font-weight: 600; color: var(--primary); margin-bottom: 3px; }
+.chat-input-row { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.chat-input-row input { flex: 1; }
+.chat-empty { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--text-sub); gap: 8px; }
+
+/* ── Answer cards (exam attempts) ── */
+.answer-card {
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+}
+.answer-card .q-text { font-weight: 600; font-size: .875rem; margin-bottom: 8px; }
+.answer-card .a-given { font-size: .85rem; color: rgba(255,255,255,.7); margin-bottom: 10px; padding: 8px 10px; background: rgba(255,255,255,.04); border-radius: 8px; }
+.answer-card .score-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.answer-card .score-row input { width: 90px; }
+.answer-card .score-label { font-size: .78rem; color: var(--text-sub); }
+.answer-card.correct { border-color: rgba(50,215,75,.3); }
+.answer-card.wrong { border-color: rgba(255,69,58,.3); }
+
+/* ── Journal entries ── */
+.journal-entry { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+.journal-entry .je-date { font-size: .72rem; color: var(--primary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+.journal-entry .je-text { font-size: .875rem; line-height: 1.6; color: rgba(255,255,255,.85); white-space: pre-wrap; }
+.journal-student { font-size: .8rem; color: var(--text-sub); margin-bottom: 8px; font-weight: 600; }
+
+/* ── Submission history ── */
+.history-entry { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.history-entry:last-child { border-bottom: none; }
+.history-num { width: 28px; height: 28px; border-radius: 50%; background: var(--primary-dim); color: var(--primary); font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.history-meta { font-size: .78rem; color: var(--text-sub); margin-top: 3px; }
+
+/* ── Profile ── */
+.profile-avatar-row { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; }
+.profile-avatar-lg { width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: #000; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.profile-meta { font-size: .8rem; color: var(--text-sub); margin-top: 2px; }
+
+/* ── Attempt attempt table ── */
+.attempt-score { font-weight: 700; color: var(--primary); }
+</style>
 </head>
 <body>
 <div class="app">
@@ -15,7 +120,10 @@
       <p>Преподаватель</p>
     </div>
     <nav class="sidebar-nav">
-      <div class="nav-item active" id="nav-exams" onclick="showSection('exams')">
+      <div class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')">
+        <span class="icon">🏠</span> Главная
+      </div>
+      <div class="nav-item" id="nav-exams" onclick="showSection('exams')">
         <span class="icon">📝</span> Экзамены
       </div>
       <div class="nav-item" id="nav-questions" onclick="showSection('questions')">
@@ -26,9 +134,20 @@
       </div>
       <div class="nav-item" id="nav-submissions" onclick="showSection('submissions')">
         <span class="icon">📤</span> Сдачи работ
+        <span class="nav-badge" id="pending-badge">0</span>
       </div>
       <div class="nav-item" id="nav-groups" onclick="showSection('groups')">
         <span class="icon">🏫</span> Мои группы
+      </div>
+      <div class="nav-item" id="nav-notifications" onclick="showSection('notifications')">
+        <span class="icon">🔔</span> Уведомления
+        <span class="nav-badge" id="notif-nav-badge">0</span>
+      </div>
+      <div class="nav-item" id="nav-chat" onclick="showSection('chat')">
+        <span class="icon">💬</span> Чат
+      </div>
+      <div class="nav-item" id="nav-profile" onclick="showSection('profile')">
+        <span class="icon">👤</span> Профиль
       </div>
     </nav>
     <div class="sidebar-footer">
@@ -46,19 +165,85 @@
   <!-- Main -->
   <div class="main">
     <div class="topbar">
-      <h2 id="topbar-title">Экзамены</h2>
+      <h2 id="topbar-title">Главная</h2>
+      <div class="topbar-actions">
+        <button class="topbar-bell" onclick="showSection('notifications')" title="Уведомления">
+          🔔<span class="bell-bubble hidden" id="bell-count"></span>
+        </button>
+      </div>
     </div>
     <div class="content">
 
+      <!-- ── Dashboard ── -->
+      <div class="section active" id="section-dashboard">
+        <div class="welcome-banner">
+          <div class="welcome-icon">👋</div>
+          <div>
+            <h2 id="welcome-name">Добро пожаловать!</h2>
+            <p>Ваш рабочий кабинет. Управляйте экзаменами, практиками, проверяйте работы и общайтесь со студентами.</p>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card" style="cursor:pointer;" onclick="showSection('exams')">
+            <div class="stat-icon">📝</div>
+            <div><div class="stat-val" id="stat-exams">—</div><div class="stat-label">Экзаменов</div></div>
+          </div>
+          <div class="stat-card" style="cursor:pointer;" onclick="showSection('practices')">
+            <div class="stat-icon">🔬</div>
+            <div><div class="stat-val" id="stat-practices">—</div><div class="stat-label">Практик</div></div>
+          </div>
+          <div class="stat-card" style="cursor:pointer;" onclick="showSection('submissions')">
+            <div class="stat-icon">⏳</div>
+            <div><div class="stat-val" id="stat-pending" style="color:var(--warning)">—</div><div class="stat-label">На проверке</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏫</div>
+            <div><div class="stat-val" id="stat-groups">—</div><div class="stat-label">Групп</div></div>
+          </div>
+          <div class="stat-card" style="cursor:pointer;" onclick="showSection('notifications')">
+            <div class="stat-icon">🔔</div>
+            <div><div class="stat-val" id="stat-notifs" style="color:var(--info)">—</div><div class="stat-label">Непрочитанных</div></div>
+          </div>
+          <div class="stat-card" style="cursor:pointer;" onclick="showSection('exams')">
+            <div class="stat-icon">✏️</div>
+            <div><div class="stat-val" id="stat-ungraded" style="color:var(--danger)">—</div><div class="stat-label">Ждут оценки</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Работы на проверке</span>
+            <button class="btn btn-outline btn-sm" onclick="showSection('submissions')">Все работы →</button>
+          </div>
+          <div id="dash-submissions"><div class="loader-wrap"><div class="loader"></div></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Попытки тестов, требующие оценки</span>
+            <button class="btn btn-outline btn-sm" onclick="showSection('exams')">К экзаменам →</button>
+          </div>
+          <div id="dash-attempts"><div class="loader-wrap"><div class="loader"></div></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Последние уведомления</span>
+            <button class="btn btn-outline btn-sm" onclick="showSection('notifications')">Все →</button>
+          </div>
+          <div id="dash-notifs"><div class="loader-wrap"><div class="loader"></div></div></div>
+        </div>
+      </div>
+
       <!-- ── Exams ── -->
-      <div class="section active" id="section-exams">
+      <div class="section" id="section-exams">
         <div class="card">
           <div class="card-header">
             <span class="card-title">Мои экзамены</span>
-            <button class="btn btn-primary btn-sm" onclick="openExamModal()">+ Создать экзамен</button>
+            <button class="btn btn-primary btn-sm" onclick="openExamModal()">+ Создать</button>
           </div>
           <div class="search-bar" style="margin-bottom:14px;">
-            <input type="text" id="exams-search" placeholder="Поиск..." oninput="loadExams(0)">
+            <input type="text" id="exams-search" placeholder="Поиск по названию..." oninput="loadExams(0)">
             <select id="exams-status" onchange="loadExams(0)">
               <option value="">Все статусы</option>
               <option value="DRAFT">Черновик</option>
@@ -67,12 +252,15 @@
               <option value="COMPLETED">Завершён</option>
               <option value="CANCELLED">Отменён</option>
             </select>
+            <select id="exams-type" onchange="loadExams(0)">
+              <option value="">Все типы</option>
+              <option value="QUESTION">Тест</option>
+              <option value="PRACTICE">Практика</option>
+            </select>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr>
-                <th>Название</th><th>Тип</th><th>Статус</th><th>Начало</th><th>Конец</th><th>Действия</th>
-              </tr></thead>
+              <thead><tr><th>Название</th><th>Тип</th><th>Статус</th><th>Начало</th><th>Конец</th><th>Действия</th></tr></thead>
               <tbody id="exams-tbody"></tbody>
             </table>
           </div>
@@ -85,10 +273,10 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">Банк вопросов</span>
-            <button class="btn btn-primary btn-sm" onclick="openQuestionModal()">+ Добавить вопрос</button>
+            <button class="btn btn-primary btn-sm" onclick="openQuestionModal()">+ Добавить</button>
           </div>
           <div class="search-bar" style="margin-bottom:14px;">
-            <input type="text" id="q-search" placeholder="Поиск..." oninput="loadQuestions(0)">
+            <input type="text" id="q-search" placeholder="Поиск по тексту..." oninput="loadQuestions(0)">
             <select id="q-subject" onchange="loadQuestions(0)">
               <option value="">Все предметы</option>
             </select>
@@ -103,16 +291,14 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">Практики</span>
-            <button class="btn btn-primary btn-sm" onclick="openPracticeModal()">+ Создать практику</button>
+            <button class="btn btn-primary btn-sm" onclick="openPracticeModal()">+ Создать</button>
           </div>
           <div class="search-bar" style="margin-bottom:14px;">
-            <input type="text" id="pr-search" placeholder="Поиск..." oninput="loadPractices(0)">
+            <input type="text" id="pr-search" placeholder="Поиск по названию..." oninput="loadPractices(0)">
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr>
-                <th>Название</th><th>Режим</th><th>Предмет</th><th>Дедлайн</th><th>Действия</th>
-              </tr></thead>
+              <thead><tr><th>Название</th><th>Режим</th><th>Предмет</th><th>Дедлайн</th><th>Действия</th></tr></thead>
               <tbody id="practices-tbody"></tbody>
             </table>
           </div>
@@ -127,22 +313,22 @@
             <span class="card-title">Сданные работы</span>
           </div>
           <div class="search-bar" style="margin-bottom:14px;">
-            <select id="sub-exam" onchange="loadSubmissions(0)" style="min-width:220px;">
+            <select id="sub-exam" onchange="loadSubmissions(0)" style="min-width:240px;">
               <option value="">— Выберите экзамен —</option>
             </select>
             <select id="sub-status" onchange="loadSubmissions(0)">
-              <option value="">Все статусы</option>
               <option value="SUBMITTED">На проверке</option>
+              <option value="">Все статусы</option>
               <option value="GRADED">Оценено</option>
               <option value="RETURNED">Возвращено</option>
             </select>
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr>
-                <th>Студент</th><th>Практика</th><th>Статус</th><th>Оценка</th><th>Дата</th><th>Действия</th>
-              </tr></thead>
-              <tbody id="submissions-tbody"></tbody>
+              <thead><tr><th>Студент</th><th>Практика</th><th>Статус</th><th>Оценка</th><th>Дата сдачи</th><th>Действие</th></tr></thead>
+              <tbody id="submissions-tbody">
+                <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📋</div><p>Выберите экзамен</p></div></td></tr>
+              </tbody>
             </table>
           </div>
           <div id="submissions-pagination"></div>
@@ -153,12 +339,46 @@
       <div class="section" id="section-groups">
         <div class="card">
           <div class="card-header"><span class="card-title">Мои группы</span></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr><th>Название</th><th>Студентов</th><th>Предметы</th></tr></thead>
-              <tbody id="groups-tbody"></tbody>
-            </table>
+          <div id="groups-list"><div class="loader-wrap"><div class="loader"></div></div></div>
+        </div>
+      </div>
+
+      <!-- ── Notifications ── -->
+      <div class="section" id="section-notifications">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Уведомления</span>
+            <button class="btn btn-outline btn-sm" onclick="markAllRead()">✓ Прочитать все</button>
           </div>
+          <div id="notif-list"><div class="loader-wrap"><div class="loader"></div></div></div>
+          <div id="notif-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ── Chat ── -->
+      <div class="section" id="section-chat">
+        <div class="chat-layout">
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">Мои чаты</div>
+            <div id="chat-list"><div class="loader-wrap"><div class="loader"></div></div></div>
+          </div>
+          <div class="chat-main" id="chat-main">
+            <div class="chat-empty">
+              <div style="font-size:2rem;">💬</div>
+              <p>Выберите чат слева</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Profile ── -->
+      <div class="section" id="section-profile">
+        <div class="card" style="max-width:580px;">
+          <div class="card-header">
+            <span class="card-title">Мой профиль</span>
+            <button class="btn btn-primary btn-sm" onclick="saveProfile()">Сохранить</button>
+          </div>
+          <div id="profile-body"><div class="loader-wrap"><div class="loader"></div></div></div>
         </div>
       </div>
 
@@ -166,7 +386,9 @@
   </div>
 </div>
 
-<!-- ── Modal: Exam ── -->
+<!-- ══════════════ MODALS ══════════════ -->
+
+<!-- Modal: Exam create/edit -->
 <div class="modal-overlay" id="modal-exam">
   <div class="modal modal-lg">
     <div class="modal-header">
@@ -175,50 +397,25 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="em-id">
-      <div class="form-group">
-        <label>Название</label>
-        <input type="text" id="em-title" placeholder="Название экзамена">
-      </div>
-      <div class="form-group">
-        <label>Описание</label>
-        <textarea id="em-desc" placeholder="Описание (необязательно)"></textarea>
+      <div class="form-group"><label>Название</label><input type="text" id="em-title" placeholder="Название экзамена"></div>
+      <div class="form-group"><label>Описание</label><textarea id="em-desc" placeholder="Описание (необязательно)"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Тип</label>
+          <select id="em-type"><option value="QUESTION">Тест (вопросы)</option><option value="PRACTICE">Практика</option></select>
+        </div>
+        <div class="form-group"><label>Предмет</label><select id="em-subject"></select></div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Тип</label>
-          <select id="em-type">
-            <option value="QUESTION">Тест</option>
-            <option value="PRACTICE">Практика</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Предмет</label>
-          <select id="em-subject"></select>
-        </div>
+        <div class="form-group"><label>Начало</label><input type="datetime-local" id="em-start"></div>
+        <div class="form-group"><label>Конец</label><input type="datetime-local" id="em-end"></div>
       </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Начало</label>
-          <input type="datetime-local" id="em-start">
-        </div>
-        <div class="form-group">
-          <label>Конец</label>
-          <input type="datetime-local" id="em-end">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Макс. балл</label>
-          <input type="number" id="em-score" min="1" placeholder="100">
-        </div>
-        <div class="form-group">
-          <label>Кол-во вопросов</label>
-          <input type="number" id="em-limit" min="1" placeholder="10">
-        </div>
+        <div class="form-group"><label>Макс. балл</label><input type="number" id="em-score" min="1" placeholder="100"></div>
+        <div class="form-group"><label>Кол-во заданий</label><input type="number" id="em-limit" min="1" placeholder="10"></div>
       </div>
       <div class="form-group">
         <label>Группы</label>
-        <select id="em-groups" multiple style="height:100px;"></select>
+        <select id="em-groups" multiple style="height:110px;"></select>
         <div class="form-hint">Ctrl+Click для выбора нескольких</div>
       </div>
     </div>
@@ -229,44 +426,54 @@
   </div>
 </div>
 
-<!-- ── Modal: Exam Detail (questions + practices) ── -->
+<!-- Modal: Exam detail (5 tabs) -->
 <div class="modal-overlay" id="modal-exam-detail">
   <div class="modal modal-lg">
     <div class="modal-header">
       <span class="modal-title" id="exam-detail-title">Детали экзамена</span>
-      <button class="modal-close" onclick="document.getElementById('modal-exam-detail').classList.remove('open')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-exam-detail')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="tabs">
-        <div class="tab active" onclick="switchExamTab('questions-tab')">Вопросы</div>
-        <div class="tab" onclick="switchExamTab('practices-tab')">Практики</div>
-        <div class="tab" onclick="switchExamTab('status-tab')">Статус</div>
+      <div class="tabs" id="exam-detail-tabs">
+        <div class="tab active" data-tab="questions-tab">Вопросы</div>
+        <div class="tab" data-tab="practices-tab">Практики</div>
+        <div class="tab" data-tab="attempts-tab">Попытки студентов</div>
+        <div class="tab" data-tab="participations-tab">Участие в практиках</div>
+        <div class="tab" data-tab="status-tab">Статус</div>
       </div>
+      <!-- Вопросы -->
       <div class="tab-panel active" id="questions-tab">
-        <div style="margin-bottom:10px;">
-          <select id="add-q-select" style="min-width:240px;"></select>
-          <input type="number" id="add-q-score" placeholder="Балл" style="width:80px;margin:0 6px;">
-          <input type="number" id="add-q-order" placeholder="Порядок" style="width:80px;margin-right:6px;">
-          <button class="btn btn-primary btn-sm" onclick="addExamQuestion()">Добавить</button>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:200px;"><label>Вопрос из банка</label><select id="add-q-select"></select></div>
+          <div style="width:90px;"><label>Балл</label><input type="number" id="add-q-score" placeholder="1" min="1"></div>
+          <div style="width:90px;"><label>Порядок</label><input type="number" id="add-q-order" placeholder="1" min="1"></div>
+          <button class="btn btn-primary btn-sm" onclick="addExamQuestion()" style="margin-top:20px;">Добавить</button>
         </div>
         <div id="exam-questions-list"></div>
       </div>
+      <!-- Практики (варианты) -->
       <div class="tab-panel" id="practices-tab">
-        <div style="margin-bottom:10px;">
-          <select id="add-pr-select" style="min-width:240px;"></select>
-          <input type="number" id="add-pr-order" placeholder="Порядок" style="width:90px;margin:0 6px;">
-          <button class="btn btn-primary btn-sm" onclick="addExamPractice()">Добавить</button>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:flex-end;">
+          <div style="flex:1;min-width:200px;"><label>Практика</label><select id="add-pr-select"></select></div>
+          <div style="width:90px;"><label>Порядок</label><input type="number" id="add-pr-order" placeholder="1" min="1"></div>
+          <button class="btn btn-primary btn-sm" onclick="addExamPractice()" style="margin-top:20px;">Добавить</button>
         </div>
         <div id="exam-practices-list"></div>
       </div>
+      <!-- Попытки студентов -->
+      <div class="tab-panel" id="attempts-tab">
+        <div id="exam-attempts-list"><div class="loader-wrap"><div class="loader"></div></div></div>
+      </div>
+      <!-- Участие в практиках -->
+      <div class="tab-panel" id="participations-tab">
+        <div id="exam-participations-list"><div class="loader-wrap"><div class="loader"></div></div></div>
+      </div>
+      <!-- Статус -->
       <div class="tab-panel" id="status-tab">
-        <div class="form-group">
-          <label>Изменить статус</label>
+        <div class="form-group"><label>Изменить статус</label>
           <select id="exam-status-select">
-            <option value="DRAFT">Черновик</option>
-            <option value="READY">Готов</option>
-            <option value="PUBLISHED">Опубликован</option>
-            <option value="COMPLETED">Завершён</option>
+            <option value="DRAFT">Черновик</option><option value="READY">Готов</option>
+            <option value="PUBLISHED">Опубликован</option><option value="COMPLETED">Завершён</option>
             <option value="CANCELLED">Отменён</option>
           </select>
         </div>
@@ -276,43 +483,50 @@
   </div>
 </div>
 
-<!-- ── Modal: Question ── -->
+<!-- Modal: Attempt answers (scoring) -->
+<div class="modal-overlay" id="modal-attempt-answers">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="attempt-answers-title">Ответы студента</span>
+      <button class="modal-close" onclick="closeModal('modal-attempt-answers')">✕</button>
+    </div>
+    <div class="modal-body" id="attempt-answers-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-attempt-answers')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Question create -->
 <div class="modal-overlay" id="modal-question">
   <div class="modal modal-lg">
     <div class="modal-header">
       <span class="modal-title" id="q-modal-title">Вопрос</span>
-      <button class="modal-close" onclick="closeQuestionModal()">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-question')">✕</button>
     </div>
     <div class="modal-body">
       <input type="hidden" id="qm-id">
       <div class="form-row">
-        <div class="form-group">
-          <label>Предмет</label>
-          <select id="qm-subject"></select>
-        </div>
-        <div class="form-group">
-          <label>Тип</label>
+        <div class="form-group"><label>Предмет</label><select id="qm-subject"></select></div>
+        <div class="form-group"><label>Тип</label>
           <select id="qm-type" onchange="renderOptionFields()">
-            <option value="SINGLE">Один правильный ответ</option>
-            <option value="MULTIPLE">Несколько правильных ответов</option>
+            <option value="SINGLE">Один правильный</option>
+            <option value="MULTIPLE">Несколько правильных</option>
             <option value="TEXT">Текстовый ответ</option>
           </select>
         </div>
       </div>
-      <div class="form-group">
-        <label>Текст вопроса</label>
-        <textarea id="qm-text" placeholder="Введите вопрос..." style="min-height:80px;"></textarea>
-      </div>
+      <div class="form-group"><label>Текст вопроса</label><textarea id="qm-text" placeholder="Введите вопрос..." style="min-height:90px;"></textarea></div>
       <div id="qm-options-wrap"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeQuestionModal()">Отмена</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-question')">Отмена</button>
       <button class="btn btn-primary" onclick="saveQuestion()">Сохранить</button>
     </div>
   </div>
 </div>
 
-<!-- ── Modal: Practice ── -->
+<!-- Modal: Practice create/edit -->
 <div class="modal-overlay" id="modal-practice">
   <div class="modal modal-lg">
     <div class="modal-header">
@@ -321,40 +535,19 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="prm-id">
-      <div class="form-group">
-        <label>Название</label>
-        <input type="text" id="prm-name" placeholder="Название практики">
-      </div>
-      <div class="form-group">
-        <label>Описание</label>
-        <textarea id="prm-desc" placeholder="Описание задания..."></textarea>
-      </div>
-      <div class="form-group">
-        <label>Требования</label>
-        <textarea id="prm-req" placeholder="Требования к выполнению..."></textarea>
-      </div>
-      <div class="form-group">
-        <label>Ресурс (URL)</label>
-        <input type="url" id="prm-url" placeholder="https://...">
-      </div>
+      <div class="form-group"><label>Название</label><input type="text" id="prm-name" placeholder="Название практики"></div>
+      <div class="form-group"><label>Описание</label><textarea id="prm-desc" placeholder="Описание задания..."></textarea></div>
+      <div class="form-group"><label>Требования</label><textarea id="prm-req" placeholder="Требования к выполнению..."></textarea></div>
+      <div class="form-group"><label>Ресурс (URL)</label><input type="url" id="prm-url" placeholder="https://..."></div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Режим работы</label>
-          <select id="prm-mode">
-            <option value="INDIVIDUAL">Индивидуальная</option>
-            <option value="TEAM">Командная</option>
-          </select>
+        <div class="form-group"><label>Режим работы</label>
+          <select id="prm-mode"><option value="INDIVIDUAL">Индивидуальная</option><option value="TEAM">Командная</option></select>
         </div>
-        <div class="form-group">
-          <label>Предмет</label>
-          <select id="prm-subject"></select>
-        </div>
+        <div class="form-group"><label>Предмет</label><select id="prm-subject"></select></div>
       </div>
-      <div class="form-group">
-        <label>
-          <input type="checkbox" id="prm-scheduling" style="width:auto;margin-right:6px;">
-          Требуется дневник (ежедневные записи)
-        </label>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;margin-top:4px;">
+        <input type="checkbox" id="prm-scheduling" style="width:auto;accent-color:var(--primary);width:18px;height:18px;">
+        <label style="margin:0;text-transform:none;letter-spacing:0;font-size:.875rem;color:rgba(255,255,255,.85);">Требуется дневник (ежедневные записи)</label>
       </div>
     </div>
     <div class="modal-footer">
@@ -364,35 +557,85 @@
   </div>
 </div>
 
-<!-- ── Modal: Submission Review ── -->
+<!-- Modal: Practice journal entries -->
+<div class="modal-overlay" id="modal-journal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="journal-title">Дневник практики</span>
+      <button class="modal-close" onclick="closeModal('modal-journal')">✕</button>
+    </div>
+    <div class="modal-body" id="journal-body" style="max-height:70vh;overflow-y:auto;"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-journal')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Submission review -->
 <div class="modal-overlay" id="modal-submission">
   <div class="modal modal-lg">
     <div class="modal-header">
       <span class="modal-title">Проверка работы</span>
-      <button class="modal-close" onclick="document.getElementById('modal-submission').classList.remove('open')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-submission')">✕</button>
     </div>
     <div class="modal-body" id="submission-body"></div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="document.getElementById('modal-submission').classList.remove('open')">Закрыть</button>
-      <button class="btn btn-warning" onclick="returnSubmission()">Вернуть на доработку</button>
-      <button class="btn btn-success" onclick="gradeSubmission()">Оценить</button>
+      <button class="btn btn-outline btn-sm" onclick="openSubmissionHistory(currentSubmissionId)">📜 История</button>
+      <button class="btn btn-outline" onclick="closeModal('modal-submission')">Закрыть</button>
+      <button class="btn btn-warning" onclick="returnSubmission()">↩ Вернуть</button>
+      <button class="btn btn-success" onclick="gradeSubmission()">✓ Оценить</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Submission history -->
+<div class="modal-overlay" id="modal-sub-history">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">История версий работы</span>
+      <button class="modal-close" onclick="closeModal('modal-sub-history')">✕</button>
+    </div>
+    <div class="modal-body" id="sub-history-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-sub-history')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Group students -->
+<div class="modal-overlay" id="modal-group">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="group-modal-title">Студенты группы</span>
+      <button class="modal-close" onclick="closeModal('modal-group')">✕</button>
+    </div>
+    <div class="modal-body" id="group-modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('modal-group')">Закрыть</button>
     </div>
   </div>
 </div>
 
 <div class="toast-container" id="toasts"></div>
-
 <script src="../js/api.js"></script>
 <script src="../js/utils.js"></script>
 <script>
 if (!localStorage.getItem('token')) location.href = '../index.html';
 
+// ── Global state ──
+let mySubjects = [], myGroups = [], myUserId = null;
+let chatPollTimer = null, notifPollTimer = null;
+let currentChatId = null, lastMsgCount = 0;
+let currentSubmissionId = null, currentExamId = null, currentExamType = null;
+
 const SECTION_TITLES = {
-  exams: 'Экзамены', questions: 'Банк вопросов', practices: 'Практики',
-  submissions: 'Сдачи работ', groups: 'Мои группы'
+  dashboard: 'Главная', exams: 'Экзамены', questions: 'Банк вопросов',
+  practices: 'Практики', submissions: 'Сдачи работ', groups: 'Мои группы',
+  notifications: 'Уведомления', chat: 'Чат', profile: 'Профиль'
 };
 
 function showSection(id) {
+  stopChatPolling();
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const s = document.getElementById('section-' + id);
   if (s) s.classList.add('active');
@@ -401,36 +644,203 @@ function showSection(id) {
   if (nav) nav.classList.add('active');
   document.getElementById('topbar-title').textContent = SECTION_TITLES[id] || id;
 
-  if (id === 'exams') loadExams(0);
+  if (id === 'dashboard')     loadDashboard();
+  else if (id === 'exams')    loadExams(0);
   else if (id === 'questions') loadQuestions(0);
   else if (id === 'practices') loadPractices(0);
   else if (id === 'submissions') loadSubmissionsExams();
-  else if (id === 'groups') loadGroups();
+  else if (id === 'groups')   loadGroups();
+  else if (id === 'notifications') loadNotifications(0);
+  else if (id === 'chat')     loadChats();
+  else if (id === 'profile')  loadProfile();
 }
 
-function logout() { localStorage.clear(); location.href = '../index.html'; }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-// ── Cache ──
-let mySubjects = [], myGroups = [], myExams = [], myPracticesCache = [];
+function logout() {
+  stopChatPolling();
+  clearInterval(notifPollTimer);
+  localStorage.clear();
+  location.href = '../index.html';
+}
 
+// ── Init ──
 async function init() {
   try {
     const me = await api.get('/users/me');
-    document.getElementById('user-name').textContent = me.firstName + ' ' + me.lastName;
+    myUserId = me.id;
+    const name = (me.firstName || '') + ' ' + (me.lastName || '');
+    document.getElementById('user-name').textContent = name.trim() || me.email;
     document.getElementById('user-avatar').textContent = (me.firstName || 'T')[0].toUpperCase();
+    document.getElementById('welcome-name').textContent = 'Добро пожаловать, ' + (me.firstName || '') + '!';
   } catch {}
 
-  try {
-    const sd = await api.get('/subjects/own');
-    mySubjects = sd.content || sd;
-  } catch { mySubjects = []; }
+  try { const sd = await api.get('/subjects/own'); mySubjects = sd.content || sd; } catch { mySubjects = []; }
+  try { const gd = await api.get('/teacher/groups'); myGroups = gd.content || gd; } catch { myGroups = []; }
 
-  try {
-    const gd = await api.get('/teacher/groups');
-    myGroups = gd.content || gd;
-  } catch { myGroups = []; }
+  document.getElementById('stat-groups').textContent = myGroups.length;
+  startNotifPoll();
+  loadDashboard();
+}
 
-  loadExams(0);
+// ── Notification poll ──
+function startNotifPoll() {
+  updateNotifBadge();
+  notifPollTimer = setInterval(updateNotifBadge, 60000);
+}
+
+async function updateNotifBadge() {
+  try {
+    const data = await api.get('/notifications/unread-count');
+    const count = data.count ?? 0;
+    const bell = document.getElementById('bell-count');
+    const navBadge = document.getElementById('notif-nav-badge');
+    const statEl = document.getElementById('stat-notifs');
+    if (bell) { bell.textContent = count; bell.classList.toggle('hidden', count === 0); }
+    if (navBadge) { navBadge.textContent = count; navBadge.classList.toggle('visible', count > 0); }
+    if (statEl) statEl.textContent = count;
+  } catch {}
+}
+
+// ── Dashboard ──
+async function loadDashboard() {
+  // Parallel: exam count, practice count, notif count, all exams (for submissions + attempts)
+  const [examRes, pracRes, notifRes, allExamsRes] = await Promise.allSettled([
+    api.get('/exams?own=true&size=1'),
+    api.get('/practices?own=true&size=1'),
+    api.get('/notifications/unread-count'),
+    api.get('/exams?own=true&size=50'),
+  ]);
+
+  if (examRes.status === 'fulfilled') {
+    const d = examRes.value;
+    document.getElementById('stat-exams').textContent = d.totalElements ?? (d.content || d).length;
+  }
+  if (pracRes.status === 'fulfilled') {
+    const d = pracRes.value;
+    document.getElementById('stat-practices').textContent = d.totalElements ?? (d.content || d).length;
+  }
+  if (notifRes.status === 'fulfilled') {
+    const count = notifRes.value.count ?? 0;
+    document.getElementById('stat-notifs').textContent = count;
+  }
+
+  let allExams = [];
+  if (allExamsRes.status === 'fulfilled') {
+    allExams = allExamsRes.value.content || allExamsRes.value;
+  }
+
+  // Attempts needing scoring (QUESTION type exams)
+  const questionExams = allExams.filter(e => e.type === 'QUESTION');
+  loadDashboardAttempts(questionExams);
+
+  // Pending submissions (PRACTICE type exams)
+  const practiceExams = allExams.filter(e => e.type === 'PRACTICE');
+  loadDashboardSubmissions(practiceExams);
+
+  // Recent notifications
+  loadDashboardNotifications();
+}
+
+async function loadDashboardAttempts(exams) {
+  const el = document.getElementById('dash-attempts');
+  if (!exams.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><p>Нет тестовых экзаменов</p></div>';
+    document.getElementById('stat-ungraded').textContent = '0';
+    return;
+  }
+  try {
+    const results = await Promise.allSettled(
+      exams.slice(0, 5).map(e =>
+        api.get('/exams/' + e.id + '/attempts')
+          .then(d => (d.content || d).map(a => ({ ...a, examTitle: e.title, examId: e.id })))
+          .catch(() => [])
+      )
+    );
+    const allAttempts = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    const needGrading = allAttempts.filter(a => a.status === 'SUBMITTED' || (a.openUngradedCount && a.openUngradedCount > 0));
+    document.getElementById('stat-ungraded').textContent = needGrading.length;
+    if (!needGrading.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><p>Все попытки проверены</p></div>';
+      return;
+    }
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Студент</th><th>Экзамен</th><th>Статус</th><th>Балл</th><th>Дата</th><th></th></tr></thead>
+      <tbody>${needGrading.slice(0, 8).map(a => `<tr>
+        <td><strong>${a.student ? a.student.firstName + ' ' + a.student.lastName : '—'}</strong></td>
+        <td style="font-size:.8rem;color:var(--text-sub);">${a.examTitle}</td>
+        <td>${badge(a.status)}</td>
+        <td class="attempt-score">${a.totalScore ?? '—'}</td>
+        <td style="font-size:.8rem;">${fmtDate(a.submittedAt)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openAttemptAnswers(${a.examId}, ${a.attemptId})">Проверить</button></td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  } catch(e) {
+    document.getElementById('dash-attempts').innerHTML = `<p style="color:var(--danger);padding:12px">${e.message}</p>`;
+  }
+}
+
+async function loadDashboardSubmissions(exams) {
+  const el = document.getElementById('dash-submissions');
+  if (!exams.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Нет практических экзаменов</p></div>';
+    document.getElementById('stat-pending').textContent = '0';
+    const badge_el = document.getElementById('pending-badge');
+    if (badge_el) badge_el.classList.remove('visible');
+    return;
+  }
+  try {
+    const results = await Promise.allSettled(
+      exams.slice(0, 6).map(e =>
+        api.get('/practice-submissions?examId=' + e.id + '&status=SUBMITTED&size=50')
+          .then(d => (d.content || d).map(s => ({ ...s, examTitle: e.title })))
+          .catch(() => [])
+      )
+    );
+    const all = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    const total = all.length;
+    document.getElementById('stat-pending').textContent = total;
+    const badgeEl = document.getElementById('pending-badge');
+    if (badgeEl) { badgeEl.textContent = total; badgeEl.classList.toggle('visible', total > 0); }
+    if (!all.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><p>Все работы проверены</p></div>';
+      return;
+    }
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Студент</th><th>Практика</th><th>Экзамен</th><th>Дата</th><th></th></tr></thead>
+      <tbody>${all.slice(0, 8).map(s => `<tr>
+        <td><strong>${s.studentName || (s.student ? s.student.firstName + ' ' + s.student.lastName : '—')}</strong></td>
+        <td>${s.practiceName || s.practice?.name || '—'}</td>
+        <td style="font-size:.8rem;color:var(--text-sub);">${s.examTitle}</td>
+        <td style="font-size:.8rem;">${fmtDate(s.submittedAt)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openSubmission(${s.id})">Проверить</button></td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    ${all.length > 8 ? `<div style="text-align:center;padding:10px;"><button class="btn btn-outline btn-sm" onclick="showSection('submissions')">Показать все (${all.length}) →</button></div>` : ''}`;
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--danger);padding:12px">${e.message}</p>`;
+  }
+}
+
+async function loadDashboardNotifications() {
+  const el = document.getElementById('dash-notifs');
+  try {
+    const data = await api.get('/notifications?page=0&size=5');
+    const items = data.content || data;
+    if (!items.length) { el.innerHTML = '<div class="empty-state"><p>Нет уведомлений</p></div>'; return; }
+    el.innerHTML = items.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}" onclick="markOneRead(${n.id}, this)">
+        <div class="notif-dot ${n.read ? 'read' : ''}"></div>
+        <div style="flex:1;">
+          <div class="notif-title">${n.title}</div>
+          <div class="notif-body">${n.body || ''}</div>
+          <div class="notif-time">${fmtDate(n.createdAt)}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--danger);padding:12px">${e.message}</p>`;
+  }
 }
 
 // ── Exams ──
@@ -439,32 +849,36 @@ async function loadExams(page = 0) {
   examsPage = page;
   const q = document.getElementById('exams-search').value;
   const status = document.getElementById('exams-status').value;
+  const type = document.getElementById('exams-type').value;
   const tbody = document.getElementById('exams-tbody');
   tbody.innerHTML = '<tr><td colspan="6"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
   try {
     const params = new URLSearchParams({ page, size: 15, own: true });
     if (q) params.set('query', q);
     if (status) params.set('status', status);
+    if (type) params.set('type', type);
     const data = await api.get('/exams?' + params);
     const items = data.content || data;
     const total = data.totalPages || 1;
-    myExams = items;
     tbody.innerHTML = items.map(e => `
       <tr>
-        <td><strong>${e.title}</strong></td>
+        <td>
+          <strong>${e.title}</strong>
+          ${e.description ? `<div style="font-size:.75rem;color:var(--text-sub);margin-top:2px;">${e.description.slice(0,55)}${e.description.length>55?'…':''}</div>` : ''}
+        </td>
         <td>${badge(e.type)}</td>
         <td>${badge(e.status)}</td>
-        <td>${fmtDate(e.startAt)}</td>
-        <td>${fmtDate(e.endAt)}</td>
+        <td style="font-size:.82rem;">${fmtDate(e.startAt)}</td>
+        <td style="font-size:.82rem;">${fmtDate(e.endAt)}</td>
         <td>
           <div class="btn-group">
-            <button class="btn btn-outline btn-sm" onclick="openExamDetail(${e.id},'${e.status}')">📋</button>
-            <button class="btn btn-outline btn-sm" onclick="openEditExam(${e.id})">✏️</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteExam(${e.id})">🗑</button>
+            <button class="btn btn-outline btn-sm" onclick="openExamDetail(${e.id},'${e.status}','${e.type}')">Детали</button>
+            <button class="btn btn-outline btn-sm" onclick="openEditExam(${e.id})" title="Редактировать">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteExam(${e.id})" title="Удалить">🗑</button>
           </div>
         </td>
       </tr>
-    `).join('') || '<tr><td colspan="6"><div class="empty-state"><p>Нет экзаменов</p></div></td></tr>';
+    `).join('') || '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📝</div><p>Нет экзаменов</p></div></td></tr>';
     document.getElementById('exams-pagination').innerHTML = paginator(page, total, 'loadExams');
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
@@ -478,16 +892,12 @@ function openExamModal(exam = null) {
   document.getElementById('em-type').value = exam ? exam.type : 'QUESTION';
   document.getElementById('em-score').value = exam ? exam.maxScore : '';
   document.getElementById('em-limit').value = exam ? exam.taskLimit : '';
-  if (exam?.startAt) document.getElementById('em-start').value = exam.startAt.slice(0,16);
-  else document.getElementById('em-start').value = '';
-  if (exam?.endAt) document.getElementById('em-end').value = exam.endAt.slice(0,16);
-  else document.getElementById('em-end').value = '';
+  document.getElementById('em-start').value = exam?.startAt ? exam.startAt.slice(0,16) : '';
+  document.getElementById('em-end').value = exam?.endAt ? exam.endAt.slice(0,16) : '';
   document.getElementById('exam-modal-title').textContent = exam ? 'Редактировать экзамен' : 'Новый экзамен';
-
   const selS = document.getElementById('em-subject');
   selS.innerHTML = mySubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   if (exam) selS.value = exam.subjectId || '';
-
   const selG = document.getElementById('em-groups');
   selG.innerHTML = myGroups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
   if (exam) {
@@ -498,12 +908,9 @@ function openExamModal(exam = null) {
 }
 
 async function openEditExam(id) {
-  try {
-    const e = await api.get('/exams/' + id);
-    openExamModal(e);
-  } catch(e) { toast(e.message, 'error'); }
+  try { openExamModal(await api.get('/exams/' + id)); } catch(e) { toast(e.message, 'error'); }
 }
-function closeExamModal() { document.getElementById('modal-exam').classList.remove('open'); }
+function closeExamModal() { closeModal('modal-exam'); }
 
 async function saveExam() {
   const id = document.getElementById('em-id').value;
@@ -520,51 +927,62 @@ async function saveExam() {
     groupIds: [...selG.selectedOptions].map(o => Number(o.value)),
   };
   try {
-    if (id) await api.put('/exams/' + id, body);
-    else await api.post('/exams', body);
-    closeExamModal();
-    loadExams(examsPage);
-    toast(id ? 'Экзамен обновлён' : 'Экзамен создан');
+    if (id) await api.put('/exams/' + id, body); else await api.post('/exams', body);
+    closeExamModal(); loadExams(examsPage); toast(id ? 'Экзамен обновлён' : 'Экзамен создан');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function deleteExam(id) {
-  if (!confirm('Удалить экзамен?')) return;
-  try {
-    await api.delete('/exams/' + id);
-    loadExams(examsPage);
-    toast('Экзамен удалён');
-  } catch(e) { toast(e.message, 'error'); }
+  if (!confirm('Удалить этот экзамен?')) return;
+  try { await api.delete('/exams/' + id); loadExams(examsPage); toast('Экзамен удалён'); }
+  catch(e) { toast(e.message, 'error'); }
 }
 
-// ── Exam Detail (questions + practices + status) ──
-let currentExamId = null;
+// ── Exam Detail (5 tabs) ──
+document.querySelectorAll('#exam-detail-tabs .tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const tabId = tab.dataset.tab;
+    document.querySelectorAll('#exam-detail-tabs .tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#modal-exam-detail .tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+    if (tabId === 'attempts-tab') loadExamAttempts();
+    else if (tabId === 'participations-tab') loadExamParticipations();
+  });
+});
 
-function switchExamTab(tabId) {
-  document.querySelectorAll('#modal-exam-detail .tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('#modal-exam-detail .tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  const idx = ['questions-tab','practices-tab','status-tab'].indexOf(tabId);
-  document.querySelectorAll('#modal-exam-detail .tab')[idx].classList.add('active');
-}
-
-async function openExamDetail(id, status) {
-  currentExamId = id;
+async function openExamDetail(id, status, type) {
+  currentExamId = id; currentExamType = type;
   document.getElementById('exam-detail-title').textContent = 'Детали экзамена';
   document.getElementById('exam-status-select').value = status;
+  // Show/hide tabs based on type
+  const tabs = document.querySelectorAll('#exam-detail-tabs .tab');
+  tabs.forEach(t => {
+    const tid = t.dataset.tab;
+    if (tid === 'questions-tab' || tid === 'attempts-tab') t.style.display = type === 'QUESTION' ? '' : 'none';
+  });
   document.getElementById('modal-exam-detail').classList.add('open');
-  switchExamTab('questions-tab');
+  // Reset to first visible tab
+  const firstTab = [...tabs].find(t => t.style.display !== 'none');
+  if (firstTab) {
+    document.querySelectorAll('#exam-detail-tabs .tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('#modal-exam-detail .tab-panel').forEach(p => p.classList.remove('active'));
+    firstTab.classList.add('active');
+    document.getElementById(firstTab.dataset.tab).classList.add('active');
+  }
 
-  // Populate question select
-  const selQ = document.getElementById('add-q-select');
-  selQ.innerHTML = '<option value="">— Выберите вопрос —</option>';
-  try {
-    const qd = await api.get('/exam-questions?own=true&size=200');
-    const qs = qd.content || qd;
-    selQ.innerHTML += qs.map(q => `<option value="${q.id}">${q.text?.slice(0,60) || q.id}</option>`).join('');
-  } catch {}
+  // Populate selects
+  if (type === 'QUESTION') {
+    const selQ = document.getElementById('add-q-select');
+    selQ.innerHTML = '<option value="">— Выберите вопрос —</option>';
+    try {
+      const qd = await api.get('/questions?own=true&size=200');
+      const qs = qd.content || qd;
+      selQ.innerHTML += qs.map(q => `<option value="${q.id}">${(q.text || '').slice(0,60)}</option>`).join('');
+    } catch {}
+    loadExamQuestions();
+  }
 
-  // Populate practice select
   const selP = document.getElementById('add-pr-select');
   selP.innerHTML = '<option value="">— Выберите практику —</option>';
   try {
@@ -572,8 +990,6 @@ async function openExamDetail(id, status) {
     const ps = pd.content || pd;
     selP.innerHTML += ps.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   } catch {}
-
-  loadExamQuestions();
   loadExamPractices();
 }
 
@@ -584,12 +1000,13 @@ async function loadExamQuestions() {
     const data = await api.get('/exam-questions?examId=' + currentExamId + '&size=100');
     const items = data.content || data;
     if (!items.length) { el.innerHTML = '<div class="empty-state"><p>Вопросы не добавлены</p></div>'; return; }
-    el.innerHTML = `<table><thead><tr><th>#</th><th>Вопрос</th><th>Балл</th><th></th></tr></thead><tbody>${
+    el.innerHTML = `<table><thead><tr><th>#</th><th>Вопрос</th><th>Тип</th><th>Балл</th><th></th></tr></thead><tbody>${
       items.map(q => `<tr>
         <td>${q.orderIndex}</td>
-        <td>${q.question?.text?.slice(0,60) || '—'}</td>
+        <td>${(q.question?.text || '').slice(0,70)}</td>
+        <td>${badge(q.question?.type || '')}</td>
         <td>${q.score}</td>
-        <td><button class="btn btn-danger btn-sm btn-icon" onclick="removeExamQuestion(${q.id})">✕</button></td>
+        <td><button class="btn btn-danger btn-sm btn-icon" onclick="removeExamQuestion(${q.id})" title="Удалить">✕</button></td>
       </tr>`).join('')
     }</tbody></table>`;
   } catch(e) { el.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
@@ -597,22 +1014,18 @@ async function loadExamQuestions() {
 
 async function addExamQuestion() {
   const qId = document.getElementById('add-q-select').value;
-  const score = Number(document.getElementById('add-q-score').value);
-  const order = Number(document.getElementById('add-q-order').value);
+  const score = Number(document.getElementById('add-q-score').value) || 1;
+  const order = Number(document.getElementById('add-q-order').value) || 1;
   if (!qId) { toast('Выберите вопрос', 'error'); return; }
   try {
-    await api.post('/exam-questions', { examId: currentExamId, questionId: Number(qId), score: score || 1, orderIndex: order || 1 });
-    loadExamQuestions();
-    toast('Вопрос добавлен');
+    await api.post('/exam-questions', { examId: currentExamId, questionId: Number(qId), score, orderIndex: order });
+    loadExamQuestions(); toast('Вопрос добавлен');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function removeExamQuestion(id) {
-  try {
-    await api.delete('/exam-questions/' + id);
-    loadExamQuestions();
-    toast('Вопрос удалён');
-  } catch(e) { toast(e.message, 'error'); }
+  try { await api.delete('/exam-questions/' + id); loadExamQuestions(); toast('Вопрос удалён'); }
+  catch(e) { toast(e.message, 'error'); }
 }
 
 async function loadExamPractices() {
@@ -622,11 +1035,18 @@ async function loadExamPractices() {
     const data = await api.get('/exam-practices?examId=' + currentExamId + '&size=100');
     const items = data.content || data;
     if (!items.length) { el.innerHTML = '<div class="empty-state"><p>Практики не добавлены</p></div>'; return; }
-    el.innerHTML = `<table><thead><tr><th>#</th><th>Практика</th><th></th></tr></thead><tbody>${
+    el.innerHTML = `<table><thead><tr><th>#</th><th>Практика</th><th>Режим</th><th>Дневник</th><th></th></tr></thead><tbody>${
       items.map(p => `<tr>
         <td>${p.orderIndex}</td>
         <td>${p.practice?.name || p.practiceId}</td>
-        <td><button class="btn btn-danger btn-sm btn-icon" onclick="removeExamPractice(${p.id})">✕</button></td>
+        <td>${badge(p.practice?.workMode || '')}</td>
+        <td>${p.practice?.calendarRequired ? '✓' : '—'}</td>
+        <td>
+          <div class="btn-group">
+            ${p.practice ? `<button class="btn btn-outline btn-sm" onclick="openPracticeJournal(${p.practice.id}, '${(p.practice.name||'').replace(/'/g,"\\'")}')">📓</button>` : ''}
+            <button class="btn btn-danger btn-sm btn-icon" onclick="removeExamPractice(${p.id})">✕</button>
+          </div>
+        </td>
       </tr>`).join('')
     }</tbody></table>`;
   } catch(e) { el.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
@@ -634,33 +1054,122 @@ async function loadExamPractices() {
 
 async function addExamPractice() {
   const pId = document.getElementById('add-pr-select').value;
-  const order = Number(document.getElementById('add-pr-order').value);
+  const order = Number(document.getElementById('add-pr-order').value) || 1;
   if (!pId) { toast('Выберите практику', 'error'); return; }
   try {
-    await api.post('/exam-practices', { examId: currentExamId, practiceId: Number(pId), orderIndex: order || 1 });
-    loadExamPractices();
-    toast('Практика добавлена');
+    await api.post('/exam-practices', { examId: currentExamId, practiceId: Number(pId), orderIndex: order });
+    loadExamPractices(); toast('Практика добавлена');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function removeExamPractice(id) {
+  try { await api.delete('/exam-practices/' + id); loadExamPractices(); toast('Практика удалена'); }
+  catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadExamAttempts() {
+  const el = document.getElementById('exam-attempts-list');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
   try {
-    await api.delete('/exam-practices/' + id);
-    loadExamPractices();
-    toast('Практика удалена');
+    const data = await api.get('/exams/' + currentExamId + '/attempts');
+    const items = data.content || data;
+    if (!items.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>Нет попыток</p></div>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Студент</th><th>Статус</th><th>Балл</th><th>Открытых без оценки</th><th>Дата сдачи</th><th></th></tr></thead>
+      <tbody>${items.map(a => `<tr>
+        <td><strong>${a.student ? a.student.firstName + ' ' + a.student.lastName : '—'}</strong><div style="font-size:.75rem;color:var(--text-sub);">${a.student?.email || ''}</div></td>
+        <td>${badge(a.status)}</td>
+        <td class="attempt-score">${a.totalScore ?? '—'}</td>
+        <td>${a.openUngradedCount > 0 ? `<span class="badge badge-red">${a.openUngradedCount} без оценки</span>` : '<span class="badge badge-green">Готово</span>'}</td>
+        <td style="font-size:.8rem;">${fmtDate(a.submittedAt)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openAttemptAnswers(${currentExamId}, ${a.attemptId})">Ответы</button></td>
+      </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+  } catch(e) { el.innerHTML = `<p style="color:var(--danger);padding:12px">${e.message}</p>`; }
+}
+
+async function openAttemptAnswers(examId, attemptId) {
+  document.getElementById('attempt-answers-title').textContent = 'Ответы студента';
+  const body = document.getElementById('attempt-answers-body');
+  body.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  document.getElementById('modal-attempt-answers').classList.add('open');
+  try {
+    const items = await api.get('/exams/' + examId + '/attempts/' + attemptId + '/answers');
+    const answers = items.content || items;
+    if (!answers.length) { body.innerHTML = '<div class="empty-state"><p>Нет ответов</p></div>'; return; }
+    body.innerHTML = answers.map(a => {
+      const isText = a.questionType === 'TEXT' || a.questionType === 'OPEN';
+      const correct = a.correct;
+      let cls = isText ? '' : (correct === true ? 'correct' : correct === false ? 'wrong' : '');
+      let answerDisplay = '';
+      if (a.textAnswer) answerDisplay = `<div class="a-given">Ответ: ${a.textAnswer}</div>`;
+      else if (a.selectedOptionIds?.length) {
+        const selected = (a.options || []).filter(o => a.selectedOptionIds.includes(o.id));
+        answerDisplay = `<div class="a-given">Выбрано: ${selected.map(o => o.text).join(', ') || '—'}</div>`;
+      } else answerDisplay = `<div class="a-given" style="color:var(--text-sub);">Ответ не дан</div>`;
+
+      return `<div class="answer-card ${cls}">
+        <div class="q-text">${a.questionText || '—'} <span style="float:right;font-size:.75rem;color:var(--text-sub);">Макс: ${a.maxScore ?? '?'}</span></div>
+        ${answerDisplay}
+        ${(a.options||[]).length ? `<div style="font-size:.8rem;color:var(--text-sub);margin-bottom:8px;">
+          ${a.options.map(o => `<span style="margin-right:8px;${o.correct?'color:var(--success)':''}">${o.correct?'✓':'·'} ${o.text}</span>`).join('')}
+        </div>` : ''}
+        ${isText ? `<div class="score-row">
+          <span class="score-label">Оценить:</span>
+          <input type="number" id="ans-score-${a.answerId}" placeholder="Балл" min="0" max="${a.maxScore || 100}" value="${a.score ?? ''}">
+          <button class="btn btn-primary btn-sm" onclick="scoreAnswer(${a.answerId}, ${a.maxScore || 100})">Сохранить</button>
+          ${a.score != null ? `<span class="badge badge-green">Оценено: ${a.score}</span>` : ''}
+        </div>` : `<div class="score-label">Автооценка: ${a.score ?? '—'} / ${a.maxScore ?? '?'}</div>`}
+      </div>`;
+    }).join('');
+  } catch(e) { body.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
+}
+
+async function scoreAnswer(answerId, maxScore) {
+  const score = Number(document.getElementById('ans-score-' + answerId)?.value);
+  try {
+    await api.patch('/answers/' + answerId + '/score', { score });
+    toast('Оценка сохранена');
+    // Update display in place
+    const btn = document.querySelector(`[onclick="scoreAnswer(${answerId}, ${maxScore})"]`);
+    if (btn) btn.insertAdjacentHTML('afterend', ` <span class="badge badge-green">✓ ${score}</span>`);
   } catch(e) { toast(e.message, 'error'); }
+}
+
+async function loadExamParticipations() {
+  const el = document.getElementById('exam-participations-list');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const data = await api.get('/practice-participations?examId=' + currentExamId + '&size=100');
+    const items = data.content || data;
+    if (!items.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>Нет участников</p></div>'; return; }
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Студент</th><th>Практика</th><th>Режим</th><th>Статус</th><th>Команда</th></tr></thead>
+      <tbody>${items.map(p => {
+        const student = p.student || p.leader;
+        return `<tr>
+          <td><strong>${student ? student.firstName + ' ' + student.lastName : '—'}</strong><div style="font-size:.75rem;color:var(--text-sub);">${student?.email || ''}</div></td>
+          <td>${p.practice?.name || p.practiceName || '—'}</td>
+          <td>${badge(p.practice?.workMode || '')}</td>
+          <td>${badge(p.status || '')}</td>
+          <td style="font-size:.8rem;">${(p.members || []).map(m => m.firstName + ' ' + m.lastName).join(', ') || '—'}</td>
+        </tr>`;
+      }).join('')}
+      </tbody>
+    </table></div>`;
+  } catch(e) { el.innerHTML = `<p style="color:var(--danger);padding:12px">${e.message}</p>`; }
 }
 
 async function changeExamStatus() {
   const status = document.getElementById('exam-status-select').value;
   try {
     await api.patch('/exams/' + currentExamId + '/status?status=' + status);
-    loadExams(examsPage);
-    toast('Статус обновлён');
+    loadExams(examsPage); toast('Статус обновлён');
   } catch(e) { toast(e.message, 'error'); }
 }
 
-// ── Questions ──
+// ── Questions (fixed: uses /questions) ──
 let questionsPage = 0;
 async function loadQuestions(page = 0) {
   questionsPage = page;
@@ -668,22 +1177,15 @@ async function loadQuestions(page = 0) {
   const subjectId = document.getElementById('q-subject').value;
   const el = document.getElementById('questions-list');
   el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
-
-  // Fill subject filter
   const selS = document.getElementById('q-subject');
   if (selS.options.length <= 1) {
-    mySubjects.forEach(s => {
-      const o = document.createElement('option');
-      o.value = s.id; o.textContent = s.name;
-      selS.appendChild(o);
-    });
+    mySubjects.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.name; selS.appendChild(o); });
   }
-
   try {
-    const params = new URLSearchParams({ page, size: 10, own: true });
+    const params = new URLSearchParams({ page, size: 12, own: true });
     if (q) params.set('query', q);
     if (subjectId) params.set('subjectId', subjectId);
-    const data = await api.get('/exam-questions?' + params);
+    const data = await api.get('/questions?' + params);
     const items = data.content || data;
     const total = data.totalPages || 1;
     if (!items.length) {
@@ -692,19 +1194,17 @@ async function loadQuestions(page = 0) {
       el.innerHTML = items.map(q => `
         <div class="list-item">
           <div style="flex:1;">
-            <div style="font-weight:500;margin-bottom:2px;">${q.text || q.question?.text || '—'}</div>
-            <div style="font-size:.78rem;color:var(--text-muted);">${badge(q.type || q.question?.type || '')} · ${q.subject?.name || '—'}</div>
+            <div style="font-weight:500;margin-bottom:4px;">${q.text || '—'}</div>
+            <div style="font-size:.78rem;color:var(--text-sub);">${badge(q.type || '')} · ${q.subject?.name || q.subjectName || '—'} · ${(q.options||[]).length} вариантов</div>
           </div>
           <div class="btn-group">
-            <button class="btn btn-danger btn-sm btn-icon" onclick="deleteQuestion(${q.id})">🗑</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteQuestion(${q.id})">🗑</button>
           </div>
         </div>
       `).join('');
     }
     document.getElementById('questions-pagination').innerHTML = paginator(page, total, 'loadQuestions');
-  } catch(e) {
-    el.innerHTML = `<p style="color:var(--danger);padding:16px">${e.message}</p>`;
-  }
+  } catch(e) { el.innerHTML = `<p style="color:var(--danger);padding:16px">${e.message}</p>`; }
 }
 
 function openQuestionModal() {
@@ -712,13 +1212,10 @@ function openQuestionModal() {
   document.getElementById('qm-text').value = '';
   document.getElementById('qm-type').value = 'SINGLE';
   document.getElementById('q-modal-title').textContent = 'Новый вопрос';
-
-  const selS = document.getElementById('qm-subject');
-  selS.innerHTML = mySubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('qm-subject').innerHTML = mySubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   renderOptionFields();
   document.getElementById('modal-question').classList.add('open');
 }
-function closeQuestionModal() { document.getElementById('modal-question').classList.remove('open'); }
 
 let optionCount = 4;
 function renderOptionFields() {
@@ -727,16 +1224,14 @@ function renderOptionFields() {
   if (type === 'TEXT') { wrap.innerHTML = ''; return; }
   const inputType = type === 'MULTIPLE' ? 'checkbox' : 'radio';
   wrap.innerHTML = `
-    <div style="margin-bottom:8px;font-size:.8rem;font-weight:600;color:#444;">Варианты ответа <span style="color:var(--text-muted);font-weight:400;">(отметьте правильный)</span></div>
-    <div id="options-list">
-      ${[...Array(optionCount)].map((_, i) => `
-        <div class="question-option">
-          <input type="${inputType}" name="correct" id="opt-c-${i}" value="${i}">
-          <input type="text" id="opt-t-${i}" placeholder="Вариант ${i+1}">
-        </div>
-      `).join('')}
+    <div style="margin-bottom:8px;font-size:.8rem;font-weight:600;color:var(--text-sub);">Варианты ответа <span style="font-weight:400;">(отметьте правильный)</span></div>
+    <div id="options-list">${[...Array(optionCount)].map((_, i) => `
+      <div class="question-option">
+        <input type="${inputType}" name="correct" id="opt-c-${i}" value="${i}">
+        <input type="text" id="opt-t-${i}" placeholder="Вариант ${i+1}">
+      </div>`).join('')}
     </div>
-    <button type="button" class="btn btn-outline btn-sm" onclick="addOption()">+ Добавить вариант</button>
+    <button type="button" class="btn btn-outline btn-sm" style="margin-top:6px;" onclick="addOption()">+ Добавить вариант</button>
   `;
 }
 
@@ -747,40 +1242,30 @@ function addOption() {
   const div = document.createElement('div');
   div.className = 'question-option';
   div.innerHTML = `<input type="${type}" name="correct" id="opt-c-${i}" value="${i}"><input type="text" id="opt-t-${i}" placeholder="Вариант ${i+1}">`;
-  list.appendChild(div);
-  optionCount = i + 1;
+  list.appendChild(div); optionCount = i + 1;
 }
 
 async function saveQuestion() {
   const type = document.getElementById('qm-type').value;
-  const text = document.getElementById('qm-text').value.trim();
-  const subjectId = Number(document.getElementById('qm-subject').value);
-  const body = { text, type, subjectId, options: [] };
-
+  const body = { text: document.getElementById('qm-text').value.trim(), type, subjectId: Number(document.getElementById('qm-subject').value), options: [] };
   if (type !== 'TEXT') {
     const list = document.getElementById('options-list');
-    [...list.children].forEach((div, i) => {
+    [...list.children].forEach((_, i) => {
       const t = document.getElementById('opt-t-' + i)?.value.trim();
       const c = document.getElementById('opt-c-' + i)?.checked;
       if (t) body.options.push({ text: t, correct: c });
     });
   }
-
   try {
-    await api.post('/exam-questions', body);
-    closeQuestionModal();
-    loadQuestions(questionsPage);
-    toast('Вопрос создан');
+    await api.post('/questions', body);
+    closeModal('modal-question'); loadQuestions(questionsPage); toast('Вопрос создан');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function deleteQuestion(id) {
   if (!confirm('Удалить вопрос?')) return;
-  try {
-    await api.delete('/exam-questions/' + id);
-    loadQuestions(questionsPage);
-    toast('Вопрос удалён');
-  } catch(e) { toast(e.message, 'error'); }
+  try { await api.delete('/questions/' + id); loadQuestions(questionsPage); toast('Вопрос удалён'); }
+  catch(e) { toast(e.message, 'error'); }
 }
 
 // ── Practices ──
@@ -798,18 +1283,23 @@ async function loadPractices(page = 0) {
     const total = data.totalPages || 1;
     tbody.innerHTML = items.map(p => `
       <tr>
-        <td><strong>${p.name}</strong></td>
+        <td>
+          <strong>${p.name}</strong>
+          ${p.schedulingRequired ? '<span class="badge badge-purple" style="margin-left:6px;font-size:.65rem;">Дневник</span>' : ''}
+          ${p.description ? `<div style="font-size:.75rem;color:var(--text-sub);margin-top:2px;">${p.description.slice(0,55)}…</div>` : ''}
+        </td>
         <td>${badge(p.workMode)}</td>
-        <td>${p.subject?.name || '—'}</td>
+        <td>${p.subject?.name || p.subjectName || '—'}</td>
         <td>${p.deadline ? fmtDateOnly(p.deadline) : '—'}</td>
         <td>
           <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="openPracticeJournal(${p.id}, '${(p.name||'').replace(/'/g,"\\'")}')">📓 Дневник</button>
             <button class="btn btn-outline btn-sm" onclick='openPracticeModal(${JSON.stringify(p)})'>✏️</button>
             <button class="btn btn-danger btn-sm" onclick="deletePractice(${p.id})">🗑</button>
           </div>
         </td>
       </tr>
-    `).join('') || '<tr><td colspan="5"><div class="empty-state"><p>Нет практик</p></div></td></tr>';
+    `).join('') || '<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🔬</div><p>Нет практик</p></div></td></tr>';
     document.getElementById('practices-pagination').innerHTML = paginator(page, total, 'loadPractices');
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
@@ -823,16 +1313,14 @@ function openPracticeModal(practice = null) {
   document.getElementById('prm-req').value = practice ? practice.requirements || '' : '';
   document.getElementById('prm-url').value = practice ? practice.resourceUrl || '' : '';
   document.getElementById('prm-mode').value = practice ? practice.workMode : 'INDIVIDUAL';
-  document.getElementById('prm-scheduling').checked = practice ? practice.schedulingRequired : false;
+  document.getElementById('prm-scheduling').checked = practice ? practice.schedulingRequired || practice.calendarRequired : false;
   document.getElementById('pr-modal-title').textContent = practice ? 'Редактировать практику' : 'Новая практика';
-
   const selS = document.getElementById('prm-subject');
   selS.innerHTML = mySubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   if (practice?.subjectId) selS.value = practice.subjectId;
   document.getElementById('modal-practice').classList.add('open');
 }
-
-function closePracticeModal() { document.getElementById('modal-practice').classList.remove('open'); }
+function closePracticeModal() { closeModal('modal-practice'); }
 
 async function savePractice() {
   const id = document.getElementById('prm-id').value;
@@ -846,37 +1334,65 @@ async function savePractice() {
     subjectId: Number(document.getElementById('prm-subject').value) || null,
   };
   try {
-    if (id) await api.put('/practices/' + id, body);
-    else await api.post('/practices', body);
-    closePracticeModal();
-    loadPractices(practicesPage);
-    toast(id ? 'Практика обновлена' : 'Практика создана');
+    if (id) await api.put('/practices/' + id, body); else await api.post('/practices', body);
+    closePracticeModal(); loadPractices(practicesPage); toast(id ? 'Практика обновлена' : 'Практика создана');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function deletePractice(id) {
   if (!confirm('Удалить практику?')) return;
+  try { await api.delete('/practices/' + id); loadPractices(practicesPage); toast('Практика удалена'); }
+  catch(e) { toast(e.message, 'error'); }
+}
+
+async function openPracticeJournal(practiceId, practiceName) {
+  document.getElementById('journal-title').textContent = '📓 Дневник: ' + practiceName;
+  const body = document.getElementById('journal-body');
+  body.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  document.getElementById('modal-journal').classList.add('open');
   try {
-    await api.delete('/practices/' + id);
-    loadPractices(practicesPage);
-    toast('Практика удалена');
-  } catch(e) { toast(e.message, 'error'); }
+    const data = await api.get('/practice-journals/practice/' + practiceId);
+    const entries = data.content || data;
+    if (!entries.length) { body.innerHTML = '<div class="empty-state"><div class="empty-icon">📔</div><p>Записей нет</p></div>'; return; }
+    // Group by student
+    const byStudent = {};
+    entries.forEach(e => {
+      const key = e.studentId || e.student?.id || 'unknown';
+      const name = e.studentName || (e.student ? e.student.firstName + ' ' + e.student.lastName : 'Студент');
+      if (!byStudent[key]) byStudent[key] = { name, entries: [] };
+      byStudent[key].entries.push(e);
+    });
+    body.innerHTML = Object.values(byStudent).map(s => `
+      <div style="margin-bottom:18px;">
+        <div class="journal-student">👤 ${s.name}</div>
+        ${s.entries.sort((a,b) => new Date(b.entryDate||b.createdAt) - new Date(a.entryDate||a.createdAt)).map(e => `
+          <div class="journal-entry">
+            <div class="je-date">${fmtDateOnly(e.entryDate || e.createdAt)}</div>
+            <div class="je-text">${e.content || e.text || '—'}</div>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+  } catch(e) { body.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
 }
 
 // ── Submissions ──
-let subsPage = 0, currentSubmissionId = null;
+let subsPage = 0;
 
 async function loadSubmissionsExams() {
   const sel = document.getElementById('sub-exam');
+  const currentVal = sel.value;
   sel.innerHTML = '<option value="">— Выберите экзамен —</option>';
   try {
     const data = await api.get('/exams?own=true&size=100');
     const items = data.content || data;
     items.forEach(e => {
       const o = document.createElement('option');
-      o.value = e.id; o.textContent = e.title;
+      o.value = e.id; o.textContent = e.title + ' (' + (e.type === 'QUESTION' ? 'Тест' : 'Практика') + ')';
       sel.appendChild(o);
     });
+    if (currentVal) sel.value = currentVal;
+    else if (items.length) { sel.value = items[0].id; loadSubmissions(0); }
   } catch {}
 }
 
@@ -885,7 +1401,7 @@ async function loadSubmissions(page = 0) {
   const examId = document.getElementById('sub-exam').value;
   const status = document.getElementById('sub-status').value;
   const tbody = document.getElementById('submissions-tbody');
-  if (!examId) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><p>Выберите экзамен</p></div></td></tr>'; return; }
+  if (!examId) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📋</div><p>Выберите экзамен</p></div></td></tr>'; return; }
   tbody.innerHTML = '<tr><td colspan="6"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
   try {
     const params = new URLSearchParams({ examId, page, size: 15 });
@@ -895,14 +1411,14 @@ async function loadSubmissions(page = 0) {
     const total = data.totalPages || 1;
     tbody.innerHTML = items.map(s => `
       <tr>
-        <td>${s.studentName || (s.student ? s.student.firstName + ' ' + s.student.lastName : '—')}</td>
+        <td><strong>${s.studentName || (s.student ? s.student.firstName + ' ' + s.student.lastName : '—')}</strong><div style="font-size:.75rem;color:var(--text-sub);">${s.student?.email || ''}</div></td>
         <td>${s.practiceName || s.practice?.name || '—'}</td>
         <td>${badge(s.status)}</td>
-        <td>${s.score != null ? s.score : '—'}</td>
-        <td>${fmtDate(s.submittedAt)}</td>
+        <td>${s.score != null ? `<strong>${s.score}</strong>` : '—'}</td>
+        <td style="font-size:.8rem;">${fmtDate(s.submittedAt)}</td>
         <td><button class="btn btn-primary btn-sm" onclick="openSubmission(${s.id})">Проверить</button></td>
       </tr>
-    `).join('') || '<tr><td colspan="6"><div class="empty-state"><p>Нет работ</p></div></td></tr>';
+    `).join('') || '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">✅</div><p>Нет работ</p></div></td></tr>';
     document.getElementById('submissions-pagination').innerHTML = paginator(page, total, 'loadSubmissions');
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
@@ -917,24 +1433,18 @@ async function openSubmission(id) {
   try {
     const s = await api.get('/practice-submissions/' + id);
     body.innerHTML = `
-      <div class="detail-grid" style="margin-bottom:14px;">
+      <div class="detail-grid" style="margin-bottom:16px;">
         <div class="detail-item"><label>Статус</label><span>${badge(s.status)}</span></div>
-        <div class="detail-item"><label>Оценка</label><span>${s.score != null ? s.score : '—'}</span></div>
-        <div class="detail-item"><label>Студент</label><span>${s.studentName || '—'}</span></div>
+        <div class="detail-item"><label>Оценка</label><span>${s.score != null ? `<strong>${s.score}</strong>` : '—'}</span></div>
+        <div class="detail-item"><label>Студент</label><span>${s.studentName || (s.student ? s.student.firstName + ' ' + s.student.lastName : '—')}</span></div>
         <div class="detail-item"><label>Дата сдачи</label><span>${fmtDate(s.submittedAt)}</span></div>
       </div>
-      ${s.textContent ? `<div class="form-group"><label>Текст работы</label><div class="submission-text">${s.textContent}</div></div>` : ''}
+      ${s.textContent || s.textAnswer ? `<div class="form-group"><label>Текст работы</label><div class="submission-text">${s.textContent || s.textAnswer}</div></div>` : ''}
       ${s.fileUrl ? `<div class="form-group"><label>Файл</label><a href="${s.fileUrl}" target="_blank" class="btn btn-outline btn-sm">📎 Открыть файл</a></div>` : ''}
-      ${s.feedback ? `<div class="form-group"><label>Комментарий</label><div class="submission-text">${s.feedback}</div></div>` : ''}
-      <div class="form-group">
-        <label>Оценка</label>
-        <div class="grade-input-row">
-          <input type="number" id="sub-score" placeholder="Балл" min="0" value="${s.score || ''}">
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Комментарий преподавателя</label>
-        <textarea id="sub-feedback" placeholder="Комментарий (необязательно)">${s.feedback || ''}</textarea>
+      ${s.feedback || s.teacherComment ? `<div class="form-group"><label>Предыдущий комментарий</label><div class="submission-text">${s.feedback || s.teacherComment}</div></div>` : ''}
+      <div class="form-row">
+        <div class="form-group"><label>Выставить оценку</label><input type="number" id="sub-score" placeholder="Балл" min="0" value="${s.score || ''}"></div>
+        <div class="form-group"><label>Комментарий</label><textarea id="sub-feedback" placeholder="Комментарий для студента...">${s.feedback || s.teacherComment || ''}</textarea></div>
       </div>
     `;
   } catch(e) { body.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
@@ -945,9 +1455,7 @@ async function gradeSubmission() {
   const feedback = document.getElementById('sub-feedback')?.value;
   try {
     await api.patch('/practice-submissions/' + currentSubmissionId + '/grade', { score: Number(score), feedback });
-    document.getElementById('modal-submission').classList.remove('open');
-    loadSubmissions(subsPage);
-    toast('Работа оценена');
+    closeModal('modal-submission'); loadSubmissions(subsPage); toast('Работа оценена');
   } catch(e) { toast(e.message, 'error'); }
 }
 
@@ -955,29 +1463,246 @@ async function returnSubmission() {
   const feedback = document.getElementById('sub-feedback')?.value;
   try {
     await api.patch('/practice-submissions/' + currentSubmissionId + '/return', { feedback });
-    document.getElementById('modal-submission').classList.remove('open');
-    loadSubmissions(subsPage);
-    toast('Работа возвращена на доработку');
+    closeModal('modal-submission'); loadSubmissions(subsPage); toast('Возвращено на доработку');
   } catch(e) { toast(e.message, 'error'); }
+}
+
+async function openSubmissionHistory(id) {
+  const body = document.getElementById('sub-history-body');
+  body.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  document.getElementById('modal-sub-history').classList.add('open');
+  try {
+    const data = await api.get('/practice-submissions/' + id + '/history');
+    const items = data.content || data;
+    if (!items.length) { body.innerHTML = '<div class="empty-state"><p>История пуста</p></div>'; return; }
+    body.innerHTML = items.map((h, i) => `
+      <div class="history-entry">
+        <div class="history-num">${h.attemptNumber || i + 1}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:.875rem;">${h.textAnswer ? h.textAnswer.slice(0,80) + (h.textAnswer.length > 80 ? '…' : '') : '(файл)'}</div>
+          <div class="history-meta">${fmtDate(h.submittedAt)}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { body.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
 }
 
 // ── Groups ──
 async function loadGroups() {
-  const tbody = document.getElementById('groups-tbody');
-  tbody.innerHTML = '<tr><td colspan="3"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
+  const el = document.getElementById('groups-list');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
   try {
     const data = await api.get('/teacher/groups');
     const items = data.content || data;
-    tbody.innerHTML = items.map(g => `
-      <tr>
-        <td><strong>${g.name}</strong></td>
-        <td>${g.studentCount ?? (g.students?.length ?? '—')}</td>
-        <td>${(g.subjects || []).map(s => s.name).join(', ') || '—'}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="3"><div class="empty-state"><p>Нет групп</p></div></td></tr>';
-  } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="3" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
-  }
+    if (!items.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏫</div><p>Нет групп</p></div>'; return; }
+    el.innerHTML = items.map(g => `
+      <div class="list-item" style="cursor:pointer;border-radius:10px;" onclick="openGroupStudents(${g.id}, '${(g.name||'').replace(/'/g,"\\'")}')">
+        <div style="flex:1;">
+          <strong>${g.name}</strong>
+          <div style="font-size:.78rem;color:var(--text-sub);margin-top:3px;">${(g.subjects||[]).map(s=>s.name).join(', ') || '—'} · ${g.language || ''}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:.8rem;color:var(--text-sub);">${g.studentCount ?? (g.students?.length ?? '?')} студентов</span>
+          <span style="color:var(--text-sub);">›</span>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) { el.innerHTML = `<p style="color:var(--danger);padding:16px">${e.message}</p>`; }
+}
+
+async function openGroupStudents(groupId, groupName) {
+  document.getElementById('group-modal-title').textContent = 'Группа: ' + groupName;
+  const body = document.getElementById('group-modal-body');
+  body.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  document.getElementById('modal-group').classList.add('open');
+  try {
+    const data = await api.get('/teacher/groups/' + groupId);
+    const group = data;
+    const students = group.students || [];
+    if (!students.length) { body.innerHTML = '<div class="empty-state"><p>Студентов нет</p></div>'; return; }
+    body.innerHTML = `
+      <div style="margin-bottom:12px;font-size:.82rem;color:var(--text-sub);">Предметы: ${(group.subjects||[]).map(s=>s.name).join(', ') || '—'}</div>
+      <div class="scroll-list">${students.map((s, i) => `
+        <div class="list-item">
+          <div style="display:flex;align-items:center;gap:12px;flex:1;">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--primary-dim);border:1px solid rgba(255,179,0,.2);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:var(--primary);flex-shrink:0;">${(s.firstName||'?')[0]}</div>
+            <div>
+              <div style="font-weight:500;">${s.firstName} ${s.lastName}</div>
+              <div style="font-size:.75rem;color:var(--text-sub);">${s.email || ''} ${s.universityId ? '· ID: ' + s.universityId : ''}</div>
+            </div>
+          </div>
+          <span style="font-size:.75rem;color:var(--text-sub);">#${i+1}</span>
+        </div>
+      `).join('')}</div>`;
+  } catch(e) { body.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
+}
+
+// ── Notifications ──
+let notifPage = 0;
+async function loadNotifications(page = 0) {
+  notifPage = page;
+  const el = document.getElementById('notif-list');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const data = await api.get('/notifications?page=' + page + '&size=20');
+    const items = data.content || data;
+    const total = data.totalPages || 1;
+    if (!items.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div><p>Нет уведомлений</p></div>'; return; }
+    el.innerHTML = items.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}" onclick="markOneRead(${n.id}, this)">
+        <div class="notif-dot ${n.read ? 'read' : ''}"></div>
+        <div style="flex:1;">
+          <div class="notif-title">${n.title}</div>
+          <div class="notif-body">${n.body || ''}</div>
+          <div class="notif-time">${fmtDate(n.createdAt)}</div>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('notif-pagination').innerHTML = paginator(page, total, 'loadNotifications');
+    updateNotifBadge();
+  } catch(e) { el.innerHTML = `<p style="color:var(--danger);padding:16px">${e.message}</p>`; }
+}
+
+async function markOneRead(id, el) {
+  if (el && !el.classList.contains('unread')) return;
+  try {
+    await api.patch('/notifications/' + id + '/read');
+    if (el) { el.classList.remove('unread'); el.querySelector('.notif-dot')?.classList.add('read'); }
+    updateNotifBadge();
+  } catch {}
+}
+
+async function markAllRead() {
+  try {
+    await api.patch('/notifications/read-all');
+    loadNotifications(notifPage); updateNotifBadge(); toast('Все прочитаны');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Chat ──
+function stopChatPolling() {
+  if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
+}
+
+async function loadChats() {
+  const el = document.getElementById('chat-list');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const data = await api.get('/chats/me');
+    const items = data.content || data;
+    if (!items.length) { el.innerHTML = '<div style="padding:16px;font-size:.85rem;color:var(--text-sub);">Нет чатов</div>'; return; }
+    el.innerHTML = items.map(c => {
+      const name = c.name || (c.type === 'DIRECT' ? (c.members||[]).find(m => m.userId !== myUserId)?.name || 'Прямой чат' : 'Групповой чат');
+      const initial = (name||'?')[0].toUpperCase();
+      return `<div class="chat-item" id="chat-item-${c.id}" onclick="openChat(${c.id}, '${name.replace(/'/g,"\\'")}')">
+        <div class="chat-avatar">${initial}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="chat-item-name">${name}</div>
+          <div class="chat-item-preview">${c.lastMessage || 'Нет сообщений'}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = `<p style="color:var(--danger);padding:16px">${e.message}</p>`; }
+}
+
+async function openChat(chatId, chatName) {
+  stopChatPolling();
+  currentChatId = chatId; lastMsgCount = 0;
+  document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+  const item = document.getElementById('chat-item-' + chatId);
+  if (item) item.classList.add('active');
+  const main = document.getElementById('chat-main');
+  main.innerHTML = `
+    <div class="chat-header">${chatName}</div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-msg-input" placeholder="Введите сообщение..." onkeydown="if(event.key==='Enter')sendMessage()">
+      <button class="btn btn-primary" onclick="sendMessage()">Отправить</button>
+    </div>
+  `;
+  await fetchMessages();
+  chatPollTimer = setInterval(fetchMessages, 5000);
+}
+
+async function fetchMessages() {
+  const el = document.getElementById('chat-messages');
+  if (!el) { stopChatPolling(); return; }
+  try {
+    const data = await api.get('/chats/' + currentChatId + '/messages');
+    const msgs = data.content || data;
+    if (msgs.length === lastMsgCount) return;
+    lastMsgCount = msgs.length;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    el.innerHTML = msgs.map(m => {
+      const mine = m.senderId === myUserId || m.sender?.id === myUserId;
+      return `<div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};">
+        ${!mine ? `<div class="msg-sender">${m.senderName || m.sender?.name || ''}</div>` : ''}
+        <div class="msg-bubble ${mine ? 'mine' : 'theirs'}">${m.message || m.content || ''}</div>
+        <div class="msg-time">${fmtDate(m.sentAt || m.createdAt)}</div>
+      </div>`;
+    }).join('') || '<div style="text-align:center;color:var(--text-sub);padding:20px;font-size:.85rem;">Начните диалог</div>';
+    if (atBottom || msgs.length <= 5) el.scrollTop = el.scrollHeight;
+  } catch {}
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-msg-input');
+  const msg = input?.value.trim();
+  if (!msg || !currentChatId) return;
+  input.value = '';
+  try {
+    await api.post('/chats/' + currentChatId + '/messages', { message: msg });
+    await fetchMessages();
+  } catch(e) { toast(e.message, 'error'); input.value = msg; }
+}
+
+// ── Profile ──
+let myProfile = {};
+async function loadProfile() {
+  const body = document.getElementById('profile-body');
+  body.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const [me, profile] = await Promise.all([
+      api.get('/users/me'),
+      api.get('/profiles/teachers/me').catch(() => ({}))
+    ]);
+    myProfile = profile;
+    const name = (me.firstName || '') + ' ' + (me.lastName || '');
+    body.innerHTML = `
+      <div class="profile-avatar-row">
+        <div class="profile-avatar-lg">${(me.firstName||'T')[0].toUpperCase()}</div>
+        <div>
+          <div style="font-size:1.1rem;font-weight:700;">${name.trim() || me.email}</div>
+          <div class="profile-meta">${me.email || ''}</div>
+          <div class="profile-meta">ID: ${me.universityId || me.id || '—'}</div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Имя</label><input type="text" id="pf-fname" value="${me.firstName || ''}"></div>
+        <div class="form-group"><label>Фамилия</label><input type="text" id="pf-lname" value="${me.lastName || ''}"></div>
+      </div>
+      <div class="form-group"><label>Email</label><input type="email" id="pf-email" value="${me.email || ''}" readonly style="opacity:.6;cursor:not-allowed;"></div>
+      <div class="form-group"><label>Учёная степень</label><input type="text" id="pf-degree" placeholder="Например: к.т.н., доцент" value="${profile.academicDegree || ''}"></div>
+      <div class="form-group"><label>Телефон</label><input type="text" id="pf-phone" placeholder="+998..." value="${profile.phoneNumber || me.phoneNumber || ''}"></div>
+      <div style="margin-top:4px;">
+        <label>Преподаваемые предметы</label>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+          ${mySubjects.map(s => `<span class="badge badge-blue">${s.name}</span>`).join('') || '<span style="color:var(--text-sub);font-size:.85rem;">—</span>'}
+        </div>
+      </div>
+    `;
+  } catch(e) { body.innerHTML = `<p style="color:var(--danger);padding:12px">${e.message}</p>`; }
+}
+
+async function saveProfile() {
+  try {
+    const body = {
+      academicDegree: document.getElementById('pf-degree')?.value.trim(),
+      phoneNumber: document.getElementById('pf-phone')?.value.trim(),
+    };
+    await api.put('/profiles/teachers/me', body);
+    toast('Профиль сохранён');
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 init();
