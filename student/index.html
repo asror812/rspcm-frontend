@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSPCM — Студент</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>🎓 RSPCM</h1>
+      <p>Студент</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')">
+        <span class="icon">🏠</span> Главная
+      </div>
+      <div class="nav-item" id="nav-exams" onclick="showSection('exams')">
+        <span class="icon">📝</span> Экзамены
+      </div>
+      <div class="nav-item" id="nav-practices" onclick="showSection('practices')">
+        <span class="icon">🔬</span> Практики
+      </div>
+      <div class="nav-item" id="nav-profile" onclick="showSection('profile')">
+        <span class="icon">👤</span> Профиль
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="user-avatar">S</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-name">Загрузка...</div>
+          <div class="sidebar-user-role">Студент</div>
+        </div>
+        <button class="logout-btn" onclick="logout()" title="Выйти">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <h2 id="topbar-title">Главная</h2>
+    </div>
+    <div class="content">
+
+      <!-- ── Dashboard ── -->
+      <div class="section active" id="section-dashboard">
+        <div class="stats-grid" id="dash-stats"></div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">Ближайшие экзамены</span></div>
+          <div id="dash-exams"></div>
+        </div>
+      </div>
+
+      <!-- ── Exams ── -->
+      <div class="section" id="section-exams">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Мои экзамены</span></div>
+          <div class="search-bar" style="margin-bottom:14px;">
+            <input type="text" id="exams-search" placeholder="Поиск..." oninput="loadExams(0)">
+            <select id="exams-type" onchange="loadExams(0)">
+              <option value="">Все типы</option>
+              <option value="QUESTION">Тест</option>
+              <option value="PRACTICE">Практика</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Название</th><th>Тип</th><th>Статус</th><th>Начало</th><th>Конец</th><th>Действие</th>
+              </tr></thead>
+              <tbody id="exams-tbody"></tbody>
+            </table>
+          </div>
+          <div id="exams-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ── Practices ── -->
+      <div class="section" id="section-practices">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Мои практики</span></div>
+          <div id="practices-list"></div>
+        </div>
+      </div>
+
+      <!-- ── Profile ── -->
+      <div class="section" id="section-profile">
+        <div class="card" style="max-width:480px;">
+          <div class="card-header"><span class="card-title">Мой профиль</span></div>
+          <div id="profile-info">
+            <div class="loader-wrap"><div class="loader"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Exam Detail ── -->
+<div class="modal-overlay" id="modal-exam-detail">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="exam-detail-title">Экзамен</span>
+      <button class="modal-close" onclick="closeExamDetail()">✕</button>
+    </div>
+    <div class="modal-body" id="exam-detail-body">
+    </div>
+    <div class="modal-footer" id="exam-detail-footer">
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Test (questions) ── -->
+<div class="modal-overlay" id="modal-test">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title">Прохождение теста</span>
+      <button class="modal-close" onclick="if(confirm('Выйти? Прогресс сохранится.')) closeTestModal()">✕</button>
+    </div>
+    <div class="modal-body" id="test-body">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline btn-sm" id="test-prev" onclick="testNav(-1)">‹ Назад</button>
+      <span id="test-progress" style="font-size:.85rem;color:var(--text-muted);"></span>
+      <button class="btn btn-outline btn-sm" id="test-next" onclick="testNav(1)">Далее ›</button>
+      <button class="btn btn-success" onclick="submitTest()">Завершить тест</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Practice Detail ── -->
+<div class="modal-overlay" id="modal-practice-detail">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="prd-title">Практика</span>
+      <button class="modal-close" onclick="document.getElementById('modal-practice-detail').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="tabs">
+        <div class="tab active" onclick="switchPrTab('pr-info')">Информация</div>
+        <div class="tab" onclick="switchPrTab('pr-submit')">Сдача работы</div>
+      </div>
+      <div class="tab-panel active" id="pr-info">
+        <div id="prd-info-body"></div>
+      </div>
+      <div class="tab-panel" id="pr-submit">
+        <div id="prd-submit-body"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script src="../js/api.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+if (!localStorage.getItem('token')) location.href = '../index.html';
+
+const SECTION_TITLES = {
+  dashboard: 'Главная', exams: 'Экзамены',
+  practices: 'Практики', profile: 'Профиль'
+};
+
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const s = document.getElementById('section-' + id);
+  if (s) s.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const nav = document.getElementById('nav-' + id);
+  if (nav) nav.classList.add('active');
+  document.getElementById('topbar-title').textContent = SECTION_TITLES[id] || id;
+
+  if (id === 'exams') loadExams(0);
+  else if (id === 'practices') loadPractices();
+  else if (id === 'profile') loadProfile();
+}
+
+function logout() { localStorage.clear(); location.href = '../index.html'; }
+
+// ── Init ──
+let meData = null;
+
+async function init() {
+  try {
+    meData = await api.get('/users/me');
+    document.getElementById('user-name').textContent = meData.firstName + ' ' + meData.lastName;
+    document.getElementById('user-avatar').textContent = (meData.firstName || 'S')[0].toUpperCase();
+  } catch {}
+  loadDashboard();
+}
+
+// ── Dashboard ──
+async function loadDashboard() {
+  const statsEl = document.getElementById('dash-stats');
+  const examsEl = document.getElementById('dash-exams');
+  statsEl.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+
+  try {
+    const dash = await api.get('/student-dashboard/me');
+    statsEl.innerHTML = `
+      <div class="stat-card"><div class="stat-icon blue">📝</div><div><div class="stat-val">${dash.examCount ?? '—'}</div><div class="stat-label">Экзаменов</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">🔬</div><div><div class="stat-val">${dash.practiceCount ?? '—'}</div><div class="stat-label">Практик</div></div></div>
+      <div class="stat-card"><div class="stat-icon yellow">⭐</div><div><div class="stat-val">${dash.averageScore != null ? dash.averageScore.toFixed(1) : '—'}</div><div class="stat-label">Средний балл</div></div></div>
+      <div class="stat-card"><div class="stat-icon purple">✅</div><div><div class="stat-val">${dash.completedCount ?? '—'}</div><div class="stat-label">Завершено</div></div></div>
+    `;
+
+    if (dash.upcomingExams?.length) {
+      examsEl.innerHTML = dash.upcomingExams.map(e => `
+        <div class="list-item">
+          <div>
+            <div style="font-weight:600;">${e.title}</div>
+            <div style="font-size:.78rem;color:var(--text-muted);">${fmtDate(e.startAt)} — ${fmtDate(e.endAt)}</div>
+          </div>
+          ${badge(e.status)}
+        </div>
+      `).join('');
+    } else {
+      examsEl.innerHTML = '<div class="empty-state"><p>Нет ближайших экзаменов</p></div>';
+    }
+  } catch {
+    statsEl.innerHTML = '<div class="empty-state"><p>Не удалось загрузить данные</p></div>';
+    examsEl.innerHTML = '';
+  }
+}
+
+// ── Exams ──
+let examsPage = 0;
+async function loadExams(page = 0) {
+  examsPage = page;
+  const q = document.getElementById('exams-search').value;
+  const type = document.getElementById('exams-type').value;
+  const tbody = document.getElementById('exams-tbody');
+  tbody.innerHTML = '<tr><td colspan="6"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
+  try {
+    const params = new URLSearchParams({ page, size: 15 });
+    if (q) params.set('query', q);
+    if (type) params.set('type', type);
+    const data = await api.get('/exams/my?' + params);
+    const items = data.content || data;
+    const total = data.totalPages || 1;
+    tbody.innerHTML = items.map(e => `
+      <tr>
+        <td><strong>${e.title}</strong></td>
+        <td>${badge(e.type)}</td>
+        <td>${badge(e.status)}</td>
+        <td>${fmtDate(e.startAt)}</td>
+        <td>${fmtDate(e.endAt)}</td>
+        <td><button class="btn btn-primary btn-sm" onclick="openExamDetail(${e.id}, '${e.type}', '${e.status}')">Открыть</button></td>
+      </tr>
+    `).join('') || '<tr><td colspan="6"><div class="empty-state"><p>Нет экзаменов</p></div></td></tr>';
+    document.getElementById('exams-pagination').innerHTML = paginator(page, total, 'loadExams');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+// ── Exam Detail ──
+let currentExamId = null, currentExamType = null;
+
+async function openExamDetail(examId, type, status) {
+  currentExamId = examId;
+  currentExamType = type;
+  const body = document.getElementById('exam-detail-body');
+  const footer = document.getElementById('exam-detail-footer');
+  body.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  footer.innerHTML = '';
+  document.getElementById('modal-exam-detail').classList.add('open');
+
+  try {
+    const exam = await api.get('/exams/' + examId);
+    document.getElementById('exam-detail-title').textContent = exam.title;
+
+    let participation = null;
+    try { participation = await api.get('/exams/' + examId + '/participation/me'); } catch {}
+
+    body.innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-item"><label>Тип</label><span>${badge(exam.type)}</span></div>
+        <div class="detail-item"><label>Статус</label><span>${badge(exam.status)}</span></div>
+        <div class="detail-item"><label>Начало</label><span>${fmtDate(exam.startAt)}</span></div>
+        <div class="detail-item"><label>Конец</label><span>${fmtDate(exam.endAt)}</span></div>
+        <div class="detail-item"><label>Макс. балл</label><span>${exam.maxScore}</span></div>
+        <div class="detail-item"><label>Вопросов</label><span>${exam.taskLimit}</span></div>
+      </div>
+      ${exam.description ? `<div class="form-group"><label>Описание</label><p style="font-size:.875rem;">${exam.description}</p></div>` : ''}
+    `;
+
+    if (type === 'PRACTICE') {
+      // Show practices to select
+      let practicesList = '';
+      try {
+        const practices = await api.get('/exams/' + examId + '/practices');
+        const selectedId = participation?.selectedPracticeId || participation?.examPractice?.id;
+        practicesList = practices.map(ep => `
+          <div class="list-item">
+            <div style="flex:1;">
+              <div style="font-weight:600;">${ep.practice?.name || ep.practiceId}</div>
+              <div style="font-size:.78rem;color:var(--text-muted);">${ep.practice?.description?.slice(0,80) || ''}</div>
+            </div>
+            ${selectedId == ep.id
+              ? '<span class="badge badge-green">Выбрано</span>'
+              : (exam.status === 'PUBLISHED' ? `<button class="btn btn-primary btn-sm" onclick="selectPractice(${examId}, ${ep.id})">Выбрать</button>` : '')
+            }
+          </div>
+        `).join('');
+      } catch {}
+      body.innerHTML += `<div class="form-group"><label>Варианты практики</label><div class="scroll-list">${practicesList || '<p style="color:var(--text-muted);font-size:.875rem;">Нет вариантов</p>'}</div></div>`;
+    }
+
+    if (type === 'QUESTION') {
+      let attempt = null;
+      try { attempt = await api.get('/exams/' + examId + '/attempt/me'); } catch {}
+
+      if (attempt) {
+        body.innerHTML += `<div class="card" style="background:#f0fdf4;border-color:#bbf7d0;">
+          <div style="font-weight:600;margin-bottom:4px;">Попытка ${attempt.status === 'COMPLETED' ? 'завершена' : 'в процессе'}</div>
+          <div style="font-size:.875rem;">Балл: ${attempt.score != null ? attempt.score : '—'}</div>
+        </div>`;
+        if (attempt.status !== 'COMPLETED') {
+          footer.innerHTML = `<button class="btn btn-primary" onclick="openTest(${examId})">Продолжить тест</button>`;
+        }
+      } else if (exam.status === 'PUBLISHED') {
+        footer.innerHTML = `
+          <button class="btn btn-outline" onclick="closeExamDetail()">Закрыть</button>
+          <button class="btn btn-primary" onclick="startTest(${examId})">Начать тест</button>
+        `;
+      }
+    }
+
+    if (!footer.innerHTML) {
+      footer.innerHTML = '<button class="btn btn-outline" onclick="closeExamDetail()">Закрыть</button>';
+    }
+  } catch(e) {
+    body.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`;
+    footer.innerHTML = '<button class="btn btn-outline" onclick="closeExamDetail()">Закрыть</button>';
+  }
+}
+
+function closeExamDetail() { document.getElementById('modal-exam-detail').classList.remove('open'); }
+
+async function selectPractice(examId, examPracticeId) {
+  try {
+    await api.post('/exams/' + examId + '/practices/' + examPracticeId + '/select', {});
+    openExamDetail(examId, currentExamType, 'PUBLISHED');
+    toast('Практика выбрана');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Test ──
+let testQuestions = [], testAnswers = {}, testCurrentIndex = 0, testExamId = null;
+
+async function startTest(examId) {
+  try {
+    await api.post('/exams/' + examId + '/attempt/start', {});
+    openTest(examId);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function openTest(examId) {
+  testExamId = examId;
+  testCurrentIndex = 0;
+  testAnswers = {};
+  document.getElementById('modal-test').classList.add('open');
+  document.getElementById('test-body').innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const data = await api.get('/exams/' + examId + '/questions/me');
+    testQuestions = data.content || data;
+    renderQuestion();
+  } catch(e) {
+    document.getElementById('test-body').innerHTML = `<p style="color:var(--danger)">${e.message}</p>`;
+  }
+}
+
+function renderQuestion() {
+  const q = testQuestions[testCurrentIndex];
+  if (!q) return;
+  const total = testQuestions.length;
+  document.getElementById('test-progress').textContent = `${testCurrentIndex + 1} / ${total}`;
+
+  const question = q.question || q;
+  const type = question.type;
+  const saved = testAnswers[q.id] || {};
+
+  let optionsHtml = '';
+  if (type === 'TEXT') {
+    optionsHtml = `<textarea id="ans-text" style="min-height:80px;width:100%;" placeholder="Введите ответ...">${saved.text || ''}</textarea>`;
+  } else {
+    const inputType = type === 'MULTIPLE' ? 'checkbox' : 'radio';
+    optionsHtml = (question.options || []).map(opt => `
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:8px;${(saved.optionIds || []).includes(opt.id) ? 'border-color:var(--primary);background:#eff6ff;' : ''}">
+        <input type="${inputType}" name="ans-opt" value="${opt.id}" ${(saved.optionIds || []).includes(opt.id) ? 'checked' : ''} style="width:auto;accent-color:var(--primary);">
+        ${opt.text}
+      </label>
+    `).join('');
+  }
+
+  document.getElementById('test-body').innerHTML = `
+    <div style="font-weight:600;font-size:1rem;margin-bottom:16px;">${question.text}</div>
+    ${optionsHtml}
+  `;
+}
+
+function saveCurrentAnswer() {
+  const q = testQuestions[testCurrentIndex];
+  if (!q) return;
+  const question = q.question || q;
+  const type = question.type;
+
+  if (type === 'TEXT') {
+    const text = document.getElementById('ans-text')?.value.trim();
+    testAnswers[q.id] = { text };
+  } else {
+    const checked = [...document.querySelectorAll('input[name="ans-opt"]:checked')].map(i => Number(i.value));
+    testAnswers[q.id] = { optionIds: checked };
+  }
+}
+
+function testNav(dir) {
+  saveCurrentAnswer();
+  testCurrentIndex = Math.max(0, Math.min(testQuestions.length - 1, testCurrentIndex + dir));
+  renderQuestion();
+}
+
+async function submitTest() {
+  saveCurrentAnswer();
+  if (!confirm('Завершить тест? Это действие нельзя отменить.')) return;
+
+  // Save all answers first
+  for (const [examQuestionId, ans] of Object.entries(testAnswers)) {
+    try {
+      await api.post('/exams/' + testExamId + '/questions/' + examQuestionId + '/answer', ans);
+    } catch {}
+  }
+
+  try {
+    await api.post('/exams/' + testExamId + '/attempt/submit', {});
+    closeTestModal();
+    loadExams(examsPage);
+    toast('Тест завершён!');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function closeTestModal() { document.getElementById('modal-test').classList.remove('open'); }
+
+// ── Practices ──
+async function loadPractices() {
+  const el = document.getElementById('practices-list');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const data = await api.get('/practice-participations/me');
+    const items = data.content || data;
+    if (!items.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔬</div><p>Нет активных практик</p></div>';
+      return;
+    }
+    el.innerHTML = items.map(item => {
+      const p = item.practice || item;
+      const status = item.submission?.status;
+      return `
+        <div class="list-item" style="cursor:pointer;" onclick='openPracticeDetail(${JSON.stringify(item)})'>
+          <div style="flex:1;">
+            <div style="font-weight:600;margin-bottom:4px;">${p.name || '—'}</div>
+            <div style="font-size:.78rem;color:var(--text-muted);">
+              ${badge(p.workMode)}
+              ${badge(item.status)}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+            ${status ? badge(status) : ''}
+            <span style="font-size:.75rem;color:var(--text-muted);">Подробнее ›</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--danger);padding:16px">${e.message}</p>`;
+  }
+}
+
+let currentParticipationId = null;
+
+function switchPrTab(tabId) {
+  document.querySelectorAll('#modal-practice-detail .tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#modal-practice-detail .tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  const idx = ['pr-info','pr-submit'].indexOf(tabId);
+  document.querySelectorAll('#modal-practice-detail .tab')[idx].classList.add('active');
+}
+
+async function openPracticeDetail(item) {
+  const practice = item.practice || item;
+  currentParticipationId = item.participationId || item.id;
+  document.getElementById('prd-title').textContent = practice.name || practice.title;
+  document.getElementById('modal-practice-detail').classList.add('open');
+
+  const infoEl = document.getElementById('prd-info-body');
+  const submitEl = document.getElementById('prd-submit-body');
+
+  infoEl.innerHTML = `
+    <div class="detail-grid">
+      <div class="detail-item"><label>Режим</label><span>${badge(practice.workMode)}</span></div>
+      <div class="detail-item"><label>Дедлайн</label><span>${practice.deadline ? fmtDateOnly(practice.deadline) : '—'}</span></div>
+    </div>
+    ${practice.description ? `<div class="form-group"><label>Описание</label><p style="font-size:.875rem;line-height:1.6;">${practice.description}</p></div>` : ''}
+    ${practice.requirements ? `<div class="form-group"><label>Требования</label><p style="font-size:.875rem;line-height:1.6;">${practice.requirements}</p></div>` : ''}
+    ${practice.resourceUrl ? `<div class="form-group"><label>Ресурс</label><a href="${practice.resourceUrl}" target="_blank" class="btn btn-outline btn-sm">🔗 Открыть</a></div>` : ''}
+  `;
+
+  // Load submission
+  let submission = item.submission;
+  if (!submission && currentParticipationId) {
+    try {
+      submission = await api.get('/practice-submissions/participation/' + currentParticipationId);
+    } catch {}
+  }
+
+  let statusBanner = '';
+  if (submission) {
+    const colors = { SUBMITTED: '#eff6ff', GRADED: '#f0fdf4', RETURNED: '#fff7ed' };
+    statusBanner = `
+      <div style="background:${colors[submission.status] || '#f8fafc'};border-radius:8px;padding:12px 14px;margin-bottom:14px;">
+        <div style="font-weight:600;margin-bottom:4px;">Статус: ${badge(submission.status)}</div>
+        ${submission.score != null ? `<div style="font-size:.875rem;">Оценка: <strong>${submission.score}</strong></div>` : ''}
+        ${submission.feedback ? `<div style="font-size:.875rem;margin-top:6px;">Комментарий: ${submission.feedback}</div>` : ''}
+      </div>
+    `;
+  }
+
+  if (submission?.status === 'GRADED') {
+    submitEl.innerHTML = statusBanner + `<div class="empty-state"><p>Работа проверена ✓</p></div>`;
+  } else {
+    submitEl.innerHTML = `
+      ${statusBanner}
+      <div class="form-group">
+        <label>Текст работы</label>
+        <textarea id="sub-text" placeholder="Введите текст вашей работы..." style="min-height:150px;">${submission?.textContent || ''}</textarea>
+      </div>
+      <div style="display:flex;justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="submitPractice()">
+          ${submission?.status === 'RETURNED' ? 'Отправить повторно' : 'Сдать работу'}
+        </button>
+      </div>
+    `;
+  }
+
+  switchPrTab('pr-info');
+}
+
+async function submitPractice() {
+  const text = document.getElementById('sub-text')?.value.trim();
+  if (!text) { toast('Введите текст работы', 'error'); return; }
+  try {
+    await api.post('/practice-submissions/participation/' + currentParticipationId + '/submit', { textContent: text });
+    document.getElementById('modal-practice-detail').classList.remove('open');
+    loadPractices();
+    toast('Работа сдана!');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Profile ──
+async function loadProfile() {
+  const el = document.getElementById('profile-info');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const me = meData || await api.get('/users/me');
+    el.innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-item"><label>Имя</label><span>${me.firstName}</span></div>
+        <div class="detail-item"><label>Фамилия</label><span>${me.lastName}</span></div>
+        <div class="detail-item"><label>Email</label><span>${me.email || '—'}</span></div>
+        <div class="detail-item"><label>ID студента</label><span>${me.universityId || '—'}</span></div>
+      </div>
+      <div style="margin-top:8px;">
+        ${(me.roles || []).map(r => badge(r)).join(' ')}
+      </div>
+    `;
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>

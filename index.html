@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSPCM — Вход</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">🎓</div>
+      <h1>RSPCM</h1>
+      <p>Учебная платформа</p>
+    </div>
+    <div class="form-group">
+      <label>Email или ID студента</label>
+      <input type="text" id="identifier" placeholder="example@mail.com" autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label>Пароль</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div id="login-error" style="color:#dc2626;font-size:.83rem;margin-bottom:10px;display:none;"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Войти</button>
+  </div>
+</div>
+<div class="toast-container" id="toasts"></div>
+
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script>
+// Redirect if already logged in
+(function() {
+  const token = localStorage.getItem('token');
+  const role = localStorage.getItem('role');
+  if (token && role) redirect(role);
+})();
+
+function redirect(role) {
+  if (role === 'ADMIN') location.href = 'admin/index.html';
+  else if (role === 'TEACHER') location.href = 'teacher/index.html';
+  else location.href = 'student/index.html';
+}
+
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('identifier').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('password').focus();
+});
+
+async function doLogin() {
+  const identifier = document.getElementById('identifier').value.trim();
+  const password = document.getElementById('password').value;
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  if (!identifier || !password) {
+    errEl.textContent = 'Заполните все поля';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('login-btn');
+  btn.disabled = true;
+  btn.textContent = 'Вход...';
+
+  try {
+    const data = await api.postNoAuth('/auth/login', { identifier, password });
+    localStorage.setItem('token', data.token);
+    const roles = data.roles || [];
+    const role = roles.includes('ADMIN') ? 'ADMIN' : roles.includes('TEACHER') ? 'TEACHER' : 'STUDENT';
+    localStorage.setItem('role', role);
+    localStorage.setItem('userEmail', data.email || '');
+    redirect(role);
+  } catch (e) {
+    const msg = e.message || 'Ошибка входа';
+    let display = msg;
+    try {
+      const idx = msg.indexOf('{');
+      if (idx !== -1) { display = JSON.parse(msg.slice(idx)).message || msg; }
+    } catch {}
+    errEl.textContent = display;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Войти';
+  }
+}
+</script>
+</body>
+</html>

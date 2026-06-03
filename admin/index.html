@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSPCM — Администратор</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h1>🎓 RSPCM</h1>
+      <p>Администратор</p>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')">
+        <span class="icon">📊</span> Дашборд
+      </div>
+      <div class="nav-item" id="nav-users" onclick="showSection('users')">
+        <span class="icon">👥</span> Пользователи
+      </div>
+      <div class="nav-item" id="nav-groups" onclick="showSection('groups')">
+        <span class="icon">🏫</span> Группы
+      </div>
+      <div class="nav-item" id="nav-subjects" onclick="showSection('subjects')">
+        <span class="icon">📚</span> Предметы
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="user-avatar">A</div>
+        <div class="sidebar-user-info">
+          <div class="sidebar-user-name" id="user-name">Загрузка...</div>
+          <div class="sidebar-user-role">Администратор</div>
+        </div>
+        <button class="logout-btn" onclick="logout()" title="Выйти">⏻</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <h2 id="topbar-title">Дашборд</h2>
+    </div>
+    <div class="content">
+
+      <!-- ── Dashboard ── -->
+      <div class="section active" id="section-dashboard">
+        <div class="stats-grid" id="stats-grid">
+          <div class="loader-wrap"><div class="loader"></div></div>
+        </div>
+      </div>
+
+      <!-- ── Users ── -->
+      <div class="section" id="section-users">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Пользователи</span>
+            <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ Добавить</button>
+          </div>
+          <div class="search-bar" style="margin-bottom:14px;">
+            <input type="text" id="users-search" placeholder="Поиск..." oninput="loadUsers(0)">
+            <select id="users-role" onchange="loadUsers(0)">
+              <option value="">Все роли</option>
+              <option value="ADMIN">Администратор</option>
+              <option value="TEACHER">Преподаватель</option>
+              <option value="STUDENT">Студент</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Имя</th><th>Email</th><th>Университет ID</th><th>Роль</th><th>Статус</th><th>Действия</th>
+              </tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+          <div id="users-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ── Groups ── -->
+      <div class="section" id="section-groups">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Учебные группы</span>
+            <button class="btn btn-primary btn-sm" onclick="openGroupModal()">+ Создать группу</button>
+          </div>
+          <div class="search-bar" style="margin-bottom:14px;">
+            <input type="text" id="groups-search" placeholder="Поиск..." oninput="loadGroups(0)">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Название</th><th>Язык</th><th>Описание</th><th>Студентов</th><th>Действия</th>
+              </tr></thead>
+              <tbody id="groups-tbody"></tbody>
+            </table>
+          </div>
+          <div id="groups-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ── Subjects ── -->
+      <div class="section" id="section-subjects">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Предметы</span>
+            <button class="btn btn-primary btn-sm" onclick="openSubjectModal()">+ Добавить предмет</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Название</th><th>Описание</th><th>Преподаватели</th><th>Действия</th>
+              </tr></thead>
+              <tbody id="subjects-tbody"></tbody>
+            </table>
+          </div>
+          <div id="subjects-pagination"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: User ── -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="user-modal-title">Пользователь</span>
+      <button class="modal-close" onclick="closeUserModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="um-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Имя</label>
+          <input type="text" id="um-first" placeholder="Имя">
+        </div>
+        <div class="form-group">
+          <label>Фамилия</label>
+          <input type="text" id="um-last" placeholder="Фамилия">
+        </div>
+      </div>
+      <div class="form-group" id="um-email-wrap">
+        <label>Email</label>
+        <input type="email" id="um-email" placeholder="email@example.com">
+      </div>
+      <div class="form-group" id="um-pass-wrap">
+        <label>Пароль</label>
+        <input type="password" id="um-pass" placeholder="Минимум 6 символов">
+      </div>
+      <div class="form-group">
+        <label>Роль</label>
+        <select id="um-role">
+          <option value="ADMIN">Администратор</option>
+          <option value="TEACHER">Преподаватель</option>
+          <option value="STUDENT">Студент</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="um-enabled" checked style="width:auto;margin-right:6px;">
+          Аккаунт активен
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeUserModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveUser()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Group ── -->
+<div class="modal-overlay" id="modal-group">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="group-modal-title">Группа</span>
+      <button class="modal-close" onclick="closeGroupModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="gm-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Название</label>
+          <input type="text" id="gm-name" placeholder="Название группы">
+        </div>
+        <div class="form-group">
+          <label>Язык</label>
+          <select id="gm-lang">
+            <option value="RU">Русский</option>
+            <option value="UZ">Узбекский</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Описание</label>
+        <textarea id="gm-desc" placeholder="Описание (необязательно)"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Предметы</label>
+          <select id="gm-subjects" multiple style="height:120px;"></select>
+          <div class="form-hint">Ctrl+Click для выбора нескольких</div>
+        </div>
+        <div class="form-group">
+          <label>Преподаватели</label>
+          <select id="gm-teachers" multiple style="height:120px;"></select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeGroupModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveGroup()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Subject ── -->
+<div class="modal-overlay" id="modal-subject">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="subject-modal-title">Предмет</span>
+      <button class="modal-close" onclick="closeSubjectModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sm-id">
+      <div class="form-group">
+        <label>Название</label>
+        <input type="text" id="sm-name" placeholder="Название предмета">
+      </div>
+      <div class="form-group">
+        <label>Описание</label>
+        <textarea id="sm-desc" placeholder="Описание"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Преподаватели</label>
+        <select id="sm-teachers" multiple style="height:120px;"></select>
+        <div class="form-hint">Ctrl+Click для выбора нескольких</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeSubjectModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="saveSubject()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script src="../js/api.js"></script>
+<script src="../js/utils.js"></script>
+<script>
+// Auth guard
+if (!localStorage.getItem('token')) location.href = '../index.html';
+
+const ROLE_LABELS = { ADMIN: 'Администратор', TEACHER: 'Преподаватель', STUDENT: 'Студент' };
+const LANG_LABELS = { RU: 'Русский', UZ: 'Узбекский' };
+
+// ── Override showSection for topbar title ──
+const SECTION_TITLES = {
+  dashboard: 'Дашборд',
+  users: 'Пользователи',
+  groups: 'Учебные группы',
+  subjects: 'Предметы',
+};
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  const s = document.getElementById('section-' + id);
+  if (s) s.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const nav = document.getElementById('nav-' + id);
+  if (nav) nav.classList.add('active');
+  document.getElementById('topbar-title').textContent = SECTION_TITLES[id] || id;
+
+  if (id === 'users') loadUsers(0);
+  else if (id === 'groups') { loadGroups(0); }
+  else if (id === 'subjects') loadSubjects(0);
+}
+
+function logout() {
+  localStorage.clear();
+  location.href = '../index.html';
+}
+
+// ── Init ──
+async function init() {
+  try {
+    const me = await api.get('/users/me');
+    document.getElementById('user-name').textContent = me.firstName + ' ' + me.lastName;
+    document.getElementById('user-avatar').textContent = (me.firstName || 'A')[0].toUpperCase();
+  } catch {}
+  loadDashboard();
+}
+
+// ── Dashboard ──
+async function loadDashboard() {
+  const grid = document.getElementById('stats-grid');
+  grid.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const stats = await api.get('/admin-dashboard/general-stats');
+    grid.innerHTML = `
+      <div class="stat-card"><div class="stat-icon blue">👥</div><div><div class="stat-val">${stats.userCount ?? '—'}</div><div class="stat-label">Пользователей</div></div></div>
+      <div class="stat-card"><div class="stat-icon green">🏫</div><div><div class="stat-val">${stats.groupCount ?? '—'}</div><div class="stat-label">Групп</div></div></div>
+      <div class="stat-card"><div class="stat-icon yellow">📚</div><div><div class="stat-val">${stats.subjectCount ?? '—'}</div><div class="stat-label">Предметов</div></div></div>
+      <div class="stat-card"><div class="stat-icon purple">📝</div><div><div class="stat-val">${stats.examCount ?? '—'}</div><div class="stat-label">Экзаменов</div></div></div>
+      <div class="stat-card"><div class="stat-icon red">🔬</div><div><div class="stat-val">${stats.practiceCount ?? '—'}</div><div class="stat-label">Практик</div></div></div>
+      <div class="stat-card"><div class="stat-icon blue">👨‍🎓</div><div><div class="stat-val">${stats.studentCount ?? '—'}</div><div class="stat-label">Студентов</div></div></div>
+    `;
+  } catch {
+    grid.innerHTML = '<div class="empty-state"><p>Не удалось загрузить статистику</p></div>';
+  }
+}
+
+// ── Users ──
+let usersPage = 0;
+async function loadUsers(page = 0) {
+  usersPage = page;
+  const q = document.getElementById('users-search').value;
+  const role = document.getElementById('users-role').value;
+  const tbody = document.getElementById('users-tbody');
+  tbody.innerHTML = '<tr><td colspan="6"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
+  try {
+    const params = new URLSearchParams({ page, size: 15 });
+    if (q) params.set('query', q);
+    if (role) params.set('role', role);
+    const data = await api.get('/users?' + params);
+    const items = data.content || data;
+    const total = data.totalPages || 1;
+    tbody.innerHTML = items.map(u => `
+      <tr>
+        <td>${u.firstName} ${u.lastName}</td>
+        <td>${u.email || '—'}</td>
+        <td>${u.universityId || '—'}</td>
+        <td>${(u.roles || []).map(r => `<span class="badge badge-blue">${ROLE_LABELS[r] || r}</span>`).join(' ')}</td>
+        <td><span class="badge ${u.enabled ? 'badge-green' : 'badge-gray'}">${u.enabled ? 'Активен' : 'Заблокирован'}</span></td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick='editUser(${JSON.stringify(u)})'>✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id})">🗑</button>
+          </div>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6"><div class="empty-state"><p>Нет пользователей</p></div></td></tr>';
+    document.getElementById('users-pagination').innerHTML = paginator(page, total, 'loadUsers');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+function openUserModal(user = null) {
+  document.getElementById('um-id').value = user ? user.id : '';
+  document.getElementById('um-first').value = user ? user.firstName : '';
+  document.getElementById('um-last').value = user ? user.lastName : '';
+  document.getElementById('um-email').value = user ? user.email : '';
+  document.getElementById('um-pass').value = '';
+  document.getElementById('um-role').value = user ? (user.roles?.[0] || 'STUDENT') : 'STUDENT';
+  document.getElementById('um-enabled').checked = user ? user.enabled : true;
+  document.getElementById('user-modal-title').textContent = user ? 'Редактировать пользователя' : 'Новый пользователь';
+  document.getElementById('um-email-wrap').style.display = user ? 'none' : '';
+  document.getElementById('um-pass-wrap').style.display = user ? 'none' : '';
+  document.getElementById('modal-user').classList.add('open');
+}
+function editUser(u) { openUserModal(u); }
+function closeUserModal() { document.getElementById('modal-user').classList.remove('open'); }
+
+async function saveUser() {
+  const id = document.getElementById('um-id').value;
+  const body = {
+    firstName: document.getElementById('um-first').value.trim(),
+    lastName: document.getElementById('um-last').value.trim(),
+    roles: [document.getElementById('um-role').value],
+    enabled: document.getElementById('um-enabled').checked,
+  };
+  if (!id) {
+    body.email = document.getElementById('um-email').value.trim();
+    body.password = document.getElementById('um-pass').value;
+  }
+  try {
+    if (id) await api.put('/users/' + id, body);
+    else await api.post('/users', body);
+    closeUserModal();
+    loadUsers(usersPage);
+    toast(id ? 'Пользователь обновлён' : 'Пользователь создан');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteUser(id) {
+  if (!confirm('Удалить пользователя?')) return;
+  try {
+    await api.delete('/users/' + id);
+    loadUsers(usersPage);
+    toast('Пользователь удалён');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Groups ──
+let groupsPage = 0;
+let allTeachers = [], allSubjects = [];
+
+async function loadGroups(page = 0) {
+  groupsPage = page;
+  const q = document.getElementById('groups-search').value;
+  const tbody = document.getElementById('groups-tbody');
+  tbody.innerHTML = '<tr><td colspan="5"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
+  try {
+    const params = new URLSearchParams({ page, size: 15 });
+    if (q) params.set('query', q);
+    const data = await api.get('/admin/groups?' + params);
+    const items = data.content || data;
+    const total = data.totalPages || 1;
+    tbody.innerHTML = items.map(g => `
+      <tr>
+        <td><strong>${g.name}</strong></td>
+        <td>${LANG_LABELS[g.language] || g.language}</td>
+        <td>${g.description || '—'}</td>
+        <td>${g.studentCount ?? (g.students?.length ?? '—')}</td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="openEditGroup(${g.id})">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteGroup(${g.id})">🗑</button>
+          </div>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="5"><div class="empty-state"><p>Нет групп</p></div></td></tr>';
+    document.getElementById('groups-pagination').innerHTML = paginator(page, total, 'loadGroups');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+async function openGroupModal(group = null) {
+  document.getElementById('gm-id').value = group ? group.id : '';
+  document.getElementById('gm-name').value = group ? group.name : '';
+  document.getElementById('gm-lang').value = group ? group.language : 'RU';
+  document.getElementById('gm-desc').value = group ? group.description || '' : '';
+  document.getElementById('group-modal-title').textContent = group ? 'Редактировать группу' : 'Новая группа';
+
+  // Load teachers and subjects for selects
+  try {
+    if (!allTeachers.length) {
+      const td = await api.get('/users?role=TEACHER&size=200');
+      allTeachers = td.content || td;
+    }
+    if (!allSubjects.length) {
+      const sd = await api.get('/subjects?size=200');
+      allSubjects = sd.content || sd;
+    }
+  } catch {}
+
+  const selT = document.getElementById('gm-teachers');
+  const selS = document.getElementById('gm-subjects');
+  selT.innerHTML = allTeachers.map(t => `<option value="${t.id}">${t.firstName} ${t.lastName}</option>`).join('');
+  selS.innerHTML = allSubjects.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+
+  if (group) {
+    const tIds = (group.teachers || []).map(t => String(t.id));
+    const sIds = (group.subjects || []).map(s => String(s.id));
+    [...selT.options].forEach(o => o.selected = tIds.includes(o.value));
+    [...selS.options].forEach(o => o.selected = sIds.includes(o.value));
+  }
+  document.getElementById('modal-group').classList.add('open');
+}
+
+async function openEditGroup(id) {
+  try {
+    const g = await api.get('/admin/groups/' + id);
+    openGroupModal(g);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+function closeGroupModal() { document.getElementById('modal-group').classList.remove('open'); }
+
+async function saveGroup() {
+  const id = document.getElementById('gm-id').value;
+  const selS = document.getElementById('gm-subjects');
+  const selT = document.getElementById('gm-teachers');
+  const body = {
+    name: document.getElementById('gm-name').value.trim(),
+    language: document.getElementById('gm-lang').value,
+    description: document.getElementById('gm-desc').value.trim(),
+    subjectIds: [...selS.selectedOptions].map(o => Number(o.value)),
+    teacherIds: [...selT.selectedOptions].map(o => Number(o.value)),
+  };
+  try {
+    if (id) await api.put('/admin/groups/' + id, body);
+    else await api.post('/admin/groups', body);
+    closeGroupModal();
+    loadGroups(groupsPage);
+    toast(id ? 'Группа обновлена' : 'Группа создана');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteGroup(id) {
+  if (!confirm('Удалить группу?')) return;
+  try {
+    await api.delete('/admin/groups/' + id);
+    loadGroups(groupsPage);
+    toast('Группа удалена');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Subjects ──
+let subjectsPage = 0;
+async function loadSubjects(page = 0) {
+  subjectsPage = page;
+  const tbody = document.getElementById('subjects-tbody');
+  tbody.innerHTML = '<tr><td colspan="4"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
+  try {
+    const data = await api.get('/subjects?page=' + page + '&size=15');
+    const items = data.content || data;
+    const total = data.totalPages || 1;
+    tbody.innerHTML = items.map(s => `
+      <tr>
+        <td><strong>${s.name}</strong></td>
+        <td>${s.description || '—'}</td>
+        <td>${(s.teachers || []).map(t => t.firstName + ' ' + t.lastName).join(', ') || '—'}</td>
+        <td>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick='openSubjectModal(${JSON.stringify(s)})'>✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteSubject(${s.id})">🗑</button>
+          </div>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="4"><div class="empty-state"><p>Нет предметов</p></div></td></tr>';
+    document.getElementById('subjects-pagination').innerHTML = paginator(page, total, 'loadSubjects');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+async function openSubjectModal(subject = null) {
+  document.getElementById('sm-id').value = subject ? subject.id : '';
+  document.getElementById('sm-name').value = subject ? subject.name : '';
+  document.getElementById('sm-desc').value = subject ? subject.description || '' : '';
+  document.getElementById('subject-modal-title').textContent = subject ? 'Редактировать предмет' : 'Новый предмет';
+
+  if (!allTeachers.length) {
+    try {
+      const td = await api.get('/users?role=TEACHER&size=200');
+      allTeachers = td.content || td;
+    } catch {}
+  }
+  const selT = document.getElementById('sm-teachers');
+  selT.innerHTML = allTeachers.map(t => `<option value="${t.id}">${t.firstName} ${t.lastName}</option>`).join('');
+  if (subject) {
+    const tIds = (subject.teachers || []).map(t => String(t.id));
+    [...selT.options].forEach(o => o.selected = tIds.includes(o.value));
+  }
+  document.getElementById('modal-subject').classList.add('open');
+}
+
+function closeSubjectModal() { document.getElementById('modal-subject').classList.remove('open'); }
+
+async function saveSubject() {
+  const id = document.getElementById('sm-id').value;
+  const selT = document.getElementById('sm-teachers');
+  const body = {
+    name: document.getElementById('sm-name').value.trim(),
+    description: document.getElementById('sm-desc').value.trim(),
+    teacherIds: [...selT.selectedOptions].map(o => Number(o.value)),
+  };
+  try {
+    if (id) await api.put('/subjects/' + id, body);
+    else await api.post('/subjects', body);
+    closeSubjectModal();
+    loadSubjects(subjectsPage);
+    allSubjects = []; // reset cache
+    toast(id ? 'Предмет обновлён' : 'Предмет создан');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+async function deleteSubject(id) {
+  if (!confirm('Удалить предмет?')) return;
+  try {
+    await api.delete('/subjects/' + id);
+    loadSubjects(subjectsPage);
+    toast('Предмет удалён');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+init();
+</script>
+</body>
+</html>
