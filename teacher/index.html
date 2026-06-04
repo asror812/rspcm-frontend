@@ -328,7 +328,7 @@
           </div>
           <div class="table-wrap">
             <table>
-              <thead><tr><th>Студент</th><th>Практика</th><th>Статус</th><th>Оценка</th><th>Дата сдачи</th><th>Действие</th></tr></thead>
+              <thead><tr><th>Студент</th><th>Статус</th><th>Попыток</th><th>Дата сдачи</th><th>Действие</th></tr></thead>
               <tbody id="submissions-tbody">
                 <tr><td colspan="6"><div class="empty-state"><div class="empty-icon">📋</div><p>Выберите экзамен</p></div></td></tr>
               </tbody>
@@ -810,10 +810,9 @@ async function loadDashboardSubmissions(exams) {
       return;
     }
     el.innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Студент</th><th>Практика</th><th>Экзамен</th><th>Дата</th><th></th></tr></thead>
+      <thead><tr><th>Студент</th><th>Экзамен</th><th>Дата</th><th></th></tr></thead>
       <tbody>${all.slice(0, 8).map(s => `<tr>
-        <td><strong>${s.studentName || (s.student ? s.student.firstName + ' ' + s.student.lastName : '—')}</strong></td>
-        <td>${s.practiceName || s.practice?.name || '—'}</td>
+        <td><strong>${s.submittedBy ? s.submittedBy.firstName + ' ' + s.submittedBy.lastName : '—'}</strong></td>
         <td style="font-size:.8rem;color:var(--text-sub);">${s.examTitle}</td>
         <td style="font-size:.8rem;">${fmtDate(s.submittedAt)}</td>
         <td><button class="btn btn-primary btn-sm" onclick="openSubmission(${s.id})">Проверить</button></td>
@@ -1368,27 +1367,24 @@ async function openPracticeJournal(practiceId, practiceName) {
   document.getElementById('modal-journal').classList.add('open');
   try {
     const data = await api.get('/practice-journals/practice/' + practiceId);
-    const entries = data.content || data;
-    if (!entries.length) { body.innerHTML = '<div class="empty-state"><div class="empty-icon">📔</div><p>Записей нет</p></div>'; return; }
-    // Group by student
-    const byStudent = {};
-    entries.forEach(e => {
-      const key = e.studentId || e.student?.id || 'unknown';
-      const name = e.studentName || (e.student ? e.student.firstName + ' ' + e.student.lastName : 'Студент');
-      if (!byStudent[key]) byStudent[key] = { name, entries: [] };
-      byStudent[key].entries.push(e);
-    });
-    body.innerHTML = Object.values(byStudent).map(s => `
-      <div style="margin-bottom:18px;">
-        <div class="journal-student">👤 ${s.name}</div>
-        ${s.entries.sort((a,b) => new Date(b.entryDate||b.createdAt) - new Date(a.entryDate||a.createdAt)).map(e => `
-          <div class="journal-entry">
-            <div class="je-date">${fmtDateOnly(e.entryDate || e.createdAt)}</div>
-            <div class="je-text">${e.content || e.text || '—'}</div>
-          </div>
-        `).join('')}
-      </div>
-    `).join('');
+    const journals = data.content || data;
+    if (!journals.length) { body.innerHTML = '<div class="empty-state"><div class="empty-icon">📔</div><p>Записей нет</p></div>'; return; }
+    // Each journal has student + entries[]
+    body.innerHTML = journals.map(j => {
+      const studentName = j.student ? j.student.firstName + ' ' + j.student.lastName : 'Студент';
+      const logEntries = j.entries || [];
+      return `
+        <div style="margin-bottom:18px;">
+          <div class="journal-student">👤 ${studentName}</div>
+          ${logEntries.length ? logEntries.sort((a,b) => new Date(b.entryDate) - new Date(a.entryDate)).map(e => `
+            <div class="journal-entry">
+              <div class="je-date">${fmtDateOnly(e.entryDate)}</div>
+              <div class="je-text">${e.content || '—'}</div>
+            </div>
+          `).join('') : '<div style="font-size:.8rem;color:var(--text-sub);padding:8px 0;">Нет записей</div>'}
+        </div>
+      `;
+    }).join('');
   } catch(e) { body.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
 }
 
@@ -1427,10 +1423,9 @@ async function loadSubmissions(page = 0) {
     const total = data.totalPages || 1;
     tbody.innerHTML = items.map(s => `
       <tr>
-        <td><strong>${s.studentName || (s.student ? s.student.firstName + ' ' + s.student.lastName : '—')}</strong><div style="font-size:.75rem;color:var(--text-sub);">${s.student?.email || ''}</div></td>
-        <td>${s.practiceName || s.practice?.name || '—'}</td>
+        <td><strong>${s.submittedBy ? s.submittedBy.firstName + ' ' + s.submittedBy.lastName : '—'}</strong></td>
         <td>${badge(s.status)}</td>
-        <td>${s.score != null ? `<strong>${s.score}</strong>` : '—'}</td>
+        <td>${s.attemptCount ?? '—'}</td>
         <td style="font-size:.8rem;">${fmtDate(s.submittedAt)}</td>
         <td><button class="btn btn-primary btn-sm" onclick="openSubmission(${s.id})">Проверить</button></td>
       </tr>
@@ -1451,34 +1446,30 @@ async function openSubmission(id) {
     body.innerHTML = `
       <div class="detail-grid" style="margin-bottom:16px;">
         <div class="detail-item"><label>Статус</label><span>${badge(s.status)}</span></div>
-        <div class="detail-item"><label>Оценка</label><span>${s.score != null ? `<strong>${s.score}</strong>` : '—'}</span></div>
-        <div class="detail-item"><label>Студент</label><span>${s.studentName || (s.student ? s.student.firstName + ' ' + s.student.lastName : '—')}</span></div>
+        <div class="detail-item"><label>Попыток</label><span>${s.attemptCount ?? '—'}</span></div>
+        <div class="detail-item"><label>Студент</label><span>${s.submittedBy ? s.submittedBy.firstName + ' ' + s.submittedBy.lastName : '—'}</span></div>
         <div class="detail-item"><label>Дата сдачи</label><span>${fmtDate(s.submittedAt)}</span></div>
       </div>
-      ${s.textContent || s.textAnswer ? `<div class="form-group"><label>Текст работы</label><div class="submission-text">${s.textContent || s.textAnswer}</div></div>` : ''}
+      ${s.textAnswer ? `<div class="form-group"><label>Текст работы</label><div class="submission-text">${s.textAnswer}</div></div>` : ''}
       ${s.fileUrl ? `<div class="form-group"><label>Файл</label><a href="${s.fileUrl}" target="_blank" class="btn btn-outline btn-sm">📎 Открыть файл</a></div>` : ''}
-      ${s.feedback || s.teacherComment ? `<div class="form-group"><label>Предыдущий комментарий</label><div class="submission-text">${s.feedback || s.teacherComment}</div></div>` : ''}
-      <div class="form-row">
-        <div class="form-group"><label>Выставить оценку</label><input type="number" id="sub-score" placeholder="Балл" min="0" value="${s.score || ''}"></div>
-        <div class="form-group"><label>Комментарий</label><textarea id="sub-feedback" placeholder="Комментарий для студента...">${s.feedback || s.teacherComment || ''}</textarea></div>
-      </div>
+      ${s.teacherComment ? `<div class="form-group"><label>Предыдущий комментарий</label><div class="submission-text">${s.teacherComment}</div></div>` : ''}
+      <div class="form-group"><label>Комментарий для студента</label><textarea id="sub-feedback" placeholder="Введите комментарий...">${s.teacherComment || ''}</textarea></div>
     `;
   } catch(e) { body.innerHTML = `<p style="color:var(--danger)">${e.message}</p>`; }
 }
 
 async function gradeSubmission() {
-  const score = document.getElementById('sub-score')?.value;
-  const feedback = document.getElementById('sub-feedback')?.value;
+  const teacherComment = document.getElementById('sub-feedback')?.value;
   try {
-    await api.patch('/practice-submissions/' + currentSubmissionId + '/grade', { score: Number(score), feedback });
+    await api.patch('/practice-submissions/' + currentSubmissionId + '/grade', { teacherComment });
     closeModal('modal-submission'); loadSubmissions(subsPage); toast('Работа оценена');
   } catch(e) { toast(e.message, 'error'); }
 }
 
 async function returnSubmission() {
-  const feedback = document.getElementById('sub-feedback')?.value;
+  const teacherComment = document.getElementById('sub-feedback')?.value;
   try {
-    await api.patch('/practice-submissions/' + currentSubmissionId + '/return', { feedback });
+    await api.patch('/practice-submissions/' + currentSubmissionId + '/return', { teacherComment });
     closeModal('modal-submission'); loadSubmissions(subsPage); toast('Возвращено на доработку');
   } catch(e) { toast(e.message, 'error'); }
 }
@@ -1608,7 +1599,7 @@ async function loadChats() {
     const items = data.content || data;
     if (!items.length) { el.innerHTML = '<div style="padding:16px;font-size:.85rem;color:var(--text-sub);">Нет чатов</div>'; return; }
     el.innerHTML = items.map(c => {
-      const name = c.name || (c.type === 'DIRECT' ? (c.members||[]).find(m => m.userId !== myUserId)?.name || 'Прямой чат' : 'Групповой чат');
+      const name = c.title || (c.type === 'DIRECT' ? 'Прямой чат' : 'Групповой чат');
       const initial = (name||'?')[0].toUpperCase();
       return `<div class="chat-item" id="chat-item-${c.id}" onclick="openChat(${c.id}, '${name.replace(/'/g,"\\'")}')">
         <div class="chat-avatar">${initial}</div>

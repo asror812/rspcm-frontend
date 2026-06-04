@@ -27,6 +27,12 @@
       <div class="nav-item" id="nav-subjects" onclick="showSection('subjects')">
         <span class="icon">📚</span> Предметы
       </div>
+      <div class="nav-item" id="nav-practices" onclick="showSection('practices')">
+        <span class="icon">🔬</span> Практики
+      </div>
+      <div class="nav-item" id="nav-exams" onclick="showSection('exams')">
+        <span class="icon">📝</span> Экзамены
+      </div>
     </nav>
     <div class="sidebar-footer">
       <div class="sidebar-user">
@@ -51,6 +57,13 @@
       <div class="section active" id="section-dashboard">
         <div class="stats-grid" id="stats-grid">
           <div class="loader-wrap"><div class="loader"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Последние отчёты студентов</span>
+            <button class="btn btn-outline btn-sm" onclick="showSection('practices')">Все практики →</button>
+          </div>
+          <div id="recent-reports"><div class="loader-wrap"><div class="loader"></div></div></div>
         </div>
       </div>
 
@@ -120,6 +133,56 @@
             </table>
           </div>
           <div id="subjects-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ── Practices ── -->
+      <div class="section" id="section-practices">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Практики (все)</span>
+          </div>
+          <div class="search-bar" style="margin-bottom:14px;">
+            <input type="text" id="practices-search" placeholder="Поиск..." oninput="loadAdminPractices(0)">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Название</th><th>Режим</th><th>Предмет</th><th>Дедлайн</th><th>Дневник</th>
+              </tr></thead>
+              <tbody id="practices-tbody"></tbody>
+            </table>
+          </div>
+          <div id="practices-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ── Exams ── -->
+      <div class="section" id="section-exams">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Экзамены (все)</span>
+          </div>
+          <div class="search-bar" style="margin-bottom:14px;">
+            <input type="text" id="exams-search" placeholder="Поиск..." oninput="loadAdminExams(0)">
+            <select id="exams-status" onchange="loadAdminExams(0)">
+              <option value="">Все статусы</option>
+              <option value="DRAFT">Черновик</option>
+              <option value="READY">Готов</option>
+              <option value="PUBLISHED">Опубликован</option>
+              <option value="COMPLETED">Завершён</option>
+              <option value="CANCELLED">Отменён</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Название</th><th>Тип</th><th>Статус</th><th>Начало</th><th>Конец</th><th>Действия</th>
+              </tr></thead>
+              <tbody id="exams-tbody"></tbody>
+            </table>
+          </div>
+          <div id="exams-pagination"></div>
         </div>
       </div>
 
@@ -251,6 +314,7 @@
   </div>
 </div>
 
+<input type="file" id="import-file-input" accept=".xlsx,.xls,.csv" style="display:none;" onchange="doImportStudents(this)">
 <div class="toast-container" id="toasts"></div>
 
 <script src="../js/api.js"></script>
@@ -268,6 +332,8 @@ const SECTION_TITLES = {
   users: 'Пользователи',
   groups: 'Учебные группы',
   subjects: 'Предметы',
+  practices: 'Практики',
+  exams: 'Экзамены',
 };
 function showSection(id) {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
@@ -281,6 +347,8 @@ function showSection(id) {
   if (id === 'users') loadUsers(0);
   else if (id === 'groups') { loadGroups(0); }
   else if (id === 'subjects') loadSubjects(0);
+  else if (id === 'practices') loadAdminPractices(0);
+  else if (id === 'exams') loadAdminExams(0);
 }
 
 function logout() {
@@ -305,16 +373,117 @@ async function loadDashboard() {
   try {
     const stats = await api.get('/admin-dashboard/general-stats');
     grid.innerHTML = `
-      <div class="stat-card"><div class="stat-icon blue">👥</div><div><div class="stat-val">${stats.userCount ?? '—'}</div><div class="stat-label">Пользователей</div></div></div>
-      <div class="stat-card"><div class="stat-icon green">🏫</div><div><div class="stat-val">${stats.groupCount ?? '—'}</div><div class="stat-label">Групп</div></div></div>
-      <div class="stat-card"><div class="stat-icon yellow">📚</div><div><div class="stat-val">${stats.subjectCount ?? '—'}</div><div class="stat-label">Предметов</div></div></div>
-      <div class="stat-card"><div class="stat-icon purple">📝</div><div><div class="stat-val">${stats.examCount ?? '—'}</div><div class="stat-label">Экзаменов</div></div></div>
-      <div class="stat-card"><div class="stat-icon red">🔬</div><div><div class="stat-val">${stats.practiceCount ?? '—'}</div><div class="stat-label">Практик</div></div></div>
-      <div class="stat-card"><div class="stat-icon blue">👨‍🎓</div><div><div class="stat-val">${stats.studentCount ?? '—'}</div><div class="stat-label">Студентов</div></div></div>
+      <div class="stat-card" style="cursor:pointer;" onclick="showSection('users')">
+        <div class="stat-icon blue">👨‍🎓</div><div><div class="stat-val">${stats.totalStudents ?? '—'}</div><div class="stat-label">Студентов</div></div>
+      </div>
+      <div class="stat-card" style="cursor:pointer;" onclick="showSection('groups')">
+        <div class="stat-icon green">🏫</div><div><div class="stat-val">${stats.totalStudyGroups ?? stats.totalGroups ?? '—'}</div><div class="stat-label">Учебных групп</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow">⏳</div><div><div class="stat-val" style="color:var(--warning)">${stats.pendingReports ?? '—'}</div><div class="stat-label">На проверке</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">✅</div><div><div class="stat-val" style="color:var(--success)">${stats.approvedReports ?? '—'}</div><div class="stat-label">Одобрено</div></div>
+      </div>
     `;
   } catch {
     grid.innerHTML = '<div class="empty-state"><p>Не удалось загрузить статистику</p></div>';
   }
+  loadRecentReports();
+}
+
+async function loadRecentReports() {
+  const el = document.getElementById('recent-reports');
+  try {
+    const data = await api.get('/admin-dashboard/recent-reports?size=5');
+    const items = data.content || data;
+    if (!items || !items.length) {
+      el.innerHTML = '<div class="empty-state"><p>Нет последних отчётов</p></div>';
+      return;
+    }
+    el.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Студент</th><th>Экзамен</th><th>Группы</th><th>Статус</th><th>Дата сдачи</th></tr></thead>
+      <tbody>${items.map(r => `<tr>
+        <td>${r.submittedBy ? r.submittedBy.firstName + ' ' + r.submittedBy.lastName : '—'}</td>
+        <td>${r.examTitle || '—'}</td>
+        <td style="font-size:.78rem;">${(r.groupNames || []).join(', ') || '—'}</td>
+        <td>${badge(r.status)}</td>
+        <td style="font-size:.8rem;">${fmtDate(r.submittedAt)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  } catch {
+    el.innerHTML = '<div class="empty-state"><p>Нет данных</p></div>';
+  }
+}
+
+// ── Admin Practices ──
+let adminPracticesPage = 0;
+async function loadAdminPractices(page = 0) {
+  adminPracticesPage = page;
+  const q = document.getElementById('practices-search').value;
+  const tbody = document.getElementById('practices-tbody');
+  tbody.innerHTML = '<tr><td colspan="5"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
+  try {
+    const params = new URLSearchParams({ page, size: 15 });
+    if (q) params.set('query', q);
+    const data = await api.get('/practices?' + params);
+    const items = data.content || data;
+    const total = data.totalPages || 1;
+    tbody.innerHTML = items.map(p => `
+      <tr>
+        <td><strong>${p.name || '—'}</strong></td>
+        <td>${badge(p.workMode)}</td>
+        <td>${p.subject ? p.subject.name : '—'}</td>
+        <td>${p.deadline ? fmtDateOnly(p.deadline) : '—'}</td>
+        <td>${p.schedulingRequired ? '<span class="badge badge-green">Да</span>' : '<span class="badge badge-gray">Нет</span>'}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="5"><div class="empty-state"><p>Нет практик</p></div></td></tr>';
+    document.getElementById('practices-pagination').innerHTML = paginator(page, total, 'loadAdminPractices');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="5" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+// ── Admin Exams ──
+let adminExamsPage = 0;
+async function loadAdminExams(page = 0) {
+  adminExamsPage = page;
+  const q = document.getElementById('exams-search').value;
+  const status = document.getElementById('exams-status').value;
+  const tbody = document.getElementById('exams-tbody');
+  tbody.innerHTML = '<tr><td colspan="6"><div class="loader-wrap"><div class="loader"></div></div></td></tr>';
+  try {
+    const params = new URLSearchParams({ page, size: 15 });
+    if (q) params.set('query', q);
+    if (status) params.set('status', status);
+    const data = await api.get('/exams?' + params);
+    const items = data.content || data;
+    const total = data.totalPages || 1;
+    tbody.innerHTML = items.map(e => `
+      <tr>
+        <td><strong>${e.title}</strong></td>
+        <td>${badge(e.type)}</td>
+        <td>${badge(e.status)}</td>
+        <td style="font-size:.8rem;">${fmtDate(e.startAt)}</td>
+        <td style="font-size:.8rem;">${fmtDate(e.endAt)}</td>
+        <td>
+          <button class="btn btn-danger btn-sm" onclick="deleteExam(${e.id})">🗑</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6"><div class="empty-state"><p>Нет экзаменов</p></div></td></tr>';
+    document.getElementById('exams-pagination').innerHTML = paginator(page, total, 'loadAdminExams');
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="color:var(--danger);padding:16px">${e.message}</td></tr>`;
+  }
+}
+
+async function deleteExam(id) {
+  if (!confirm('Удалить экзамен?')) return;
+  try {
+    await api.delete('/exams/' + id);
+    loadAdminExams(adminExamsPage);
+    toast('Экзамен удалён');
+  } catch(e) { toast(e.message, 'error'); }
 }
 
 // ── Users ──
@@ -423,6 +592,7 @@ async function loadGroups(page = 0) {
         <td>
           <div class="btn-group">
             <button class="btn btn-outline btn-sm" onclick="openEditGroup(${g.id})">✏️</button>
+            <button class="btn btn-outline btn-sm" title="Импорт студентов" onclick="importStudents(${g.id})">📥</button>
             <button class="btn btn-danger btn-sm" onclick="deleteGroup(${g.id})">🗑</button>
           </div>
         </td>
@@ -502,6 +672,24 @@ async function deleteGroup(id) {
     await api.delete('/admin/groups/' + id);
     loadGroups(groupsPage);
     toast('Группа удалена');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+let importGroupId = null;
+function importStudents(groupId) {
+  importGroupId = groupId;
+  document.getElementById('import-file-input').value = '';
+  document.getElementById('import-file-input').click();
+}
+
+async function doImportStudents(input) {
+  if (!input.files[0] || !importGroupId) return;
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+  try {
+    await api.postForm('/admin/groups/' + importGroupId + '/import-students', formData);
+    toast('Студенты импортированы успешно');
+    loadGroups(groupsPage);
   } catch(e) { toast(e.message, 'error'); }
 }
 

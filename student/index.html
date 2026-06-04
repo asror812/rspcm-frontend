@@ -5,6 +5,87 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RSPCM — Студент</title>
 <link rel="stylesheet" href="../css/style.css">
+<style>
+/* Topbar bell */
+.topbar { justify-content: space-between; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.topbar-bell {
+  position: relative; background: none; border: none;
+  color: var(--text-sub); font-size: 1.15rem;
+  padding: 6px 8px; border-radius: 8px; cursor: pointer;
+  transition: color .15s, background .15s;
+}
+.topbar-bell:hover { color: var(--primary); background: var(--primary-dim); }
+.bell-bubble {
+  position: absolute; top: 1px; right: 1px;
+  background: var(--danger); color: #fff;
+  font-size: .6rem; font-weight: 700;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; padding: 0 3px;
+}
+.bell-bubble.hidden { display: none; }
+/* Notifications */
+.notif-item {
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background .15s;
+}
+.notif-item:hover { background: rgba(255,255,255,.025); }
+.notif-item.unread { border-left: 3px solid var(--primary); background: rgba(255,179,0,.04); }
+.notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 6px; }
+.notif-dot.read { background: transparent; border: 1px solid rgba(255,255,255,.2); }
+.notif-title { font-weight: 600; font-size: .875rem; margin-bottom: 3px; }
+.notif-body  { font-size: .8rem; color: var(--text-sub); line-height: 1.5; }
+.notif-time  { font-size: .72rem; color: var(--text-sub); margin-top: 4px; }
+/* Chat */
+.chat-layout {
+  display: flex; height: calc(100vh - 120px);
+  background: var(--card); border-radius: 16px;
+  border: 1px solid var(--border); overflow: hidden;
+}
+.chat-sidebar { width: 280px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; }
+.chat-sidebar-header { padding: 14px 16px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: .85rem; color: var(--text-sub); flex-shrink: 0; }
+.chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.chat-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; cursor: pointer;
+  border-bottom: 1px solid var(--border); transition: background .15s;
+}
+.chat-item:hover { background: rgba(255,255,255,.04); }
+.chat-item.active { background: var(--primary-dim); }
+.chat-avatar {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem; font-weight: 700; flex-shrink: 0; color: var(--primary);
+}
+.chat-item-name { font-weight: 600; font-size: .85rem; }
+.chat-item-preview { font-size: .75rem; color: var(--text-sub); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+.chat-header { padding: 14px 18px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: .9rem; flex-shrink: 0; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.msg-bubble {
+  max-width: 68%; padding: 10px 14px; border-radius: 14px;
+  font-size: .875rem; line-height: 1.5; word-break: break-word;
+}
+.msg-bubble.mine { background: var(--primary); color: #000; align-self: flex-end; border-bottom-right-radius: 4px; }
+.msg-bubble.theirs { background: rgba(255,255,255,.08); color: var(--text); align-self: flex-start; border-bottom-left-radius: 4px; }
+.msg-time { font-size: .68rem; opacity: .55; margin-top: 3px; }
+.msg-sender { font-size: .72rem; font-weight: 600; color: var(--primary); margin-bottom: 3px; }
+.chat-input-row { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.chat-input-row input { flex: 1; }
+.chat-empty { flex: 1; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--text-sub); gap: 8px; }
+/* Journal entries */
+.journal-entry { border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; }
+.journal-entry .je-date { font-size: .72rem; color: var(--primary); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+.journal-entry .je-text { font-size: .875rem; line-height: 1.6; color: rgba(255,255,255,.85); white-space: pre-wrap; }
+/* Team members */
+.member-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 20px;
+  background: rgba(255,255,255,.07); font-size: .78rem;
+  border: 1px solid var(--border); margin: 2px;
+}
+</style>
 </head>
 <body>
 <div class="app">
@@ -23,6 +104,13 @@
       </div>
       <div class="nav-item" id="nav-practices" onclick="showSection('practices')">
         <span class="icon">🔬</span> Практики
+      </div>
+      <div class="nav-item" id="nav-notifications" onclick="showSection('notifications')">
+        <span class="icon">🔔</span> Уведомления
+        <span class="nav-badge" id="notif-nav-badge">0</span>
+      </div>
+      <div class="nav-item" id="nav-chat" onclick="showSection('chat')">
+        <span class="icon">💬</span> Чат
       </div>
       <div class="nav-item" id="nav-profile" onclick="showSection('profile')">
         <span class="icon">👤</span> Профиль
@@ -44,6 +132,11 @@
   <div class="main">
     <div class="topbar">
       <h2 id="topbar-title">Главная</h2>
+      <div class="topbar-actions">
+        <button class="topbar-bell" onclick="showSection('notifications')" title="Уведомления">
+          🔔<span class="bell-bubble hidden" id="bell-count"></span>
+        </button>
+      </div>
     </div>
     <div class="content">
 
@@ -51,7 +144,7 @@
       <div class="section active" id="section-dashboard">
         <div class="stats-grid" id="dash-stats"></div>
         <div class="card">
-          <div class="card-header"><span class="card-title">Ближайшие экзамены</span></div>
+          <div class="card-header"><span class="card-title">Ближайшие задания</span></div>
           <div id="dash-exams"></div>
         </div>
       </div>
@@ -85,6 +178,34 @@
         <div class="card">
           <div class="card-header"><span class="card-title">Мои практики</span></div>
           <div id="practices-list"></div>
+        </div>
+      </div>
+
+      <!-- ── Notifications ── -->
+      <div class="section" id="section-notifications">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Уведомления</span>
+            <button class="btn btn-outline btn-sm" onclick="markAllRead()">✓ Прочитать все</button>
+          </div>
+          <div id="notif-list"><div class="loader-wrap"><div class="loader"></div></div></div>
+          <div id="notif-pagination"></div>
+        </div>
+      </div>
+
+      <!-- ── Chat ── -->
+      <div class="section" id="section-chat">
+        <div class="chat-layout">
+          <div class="chat-sidebar">
+            <div class="chat-sidebar-header">Мои чаты</div>
+            <div id="chat-list"><div class="loader-wrap"><div class="loader"></div></div></div>
+          </div>
+          <div class="chat-main" id="chat-main">
+            <div class="chat-empty">
+              <div style="font-size:2rem;">💬</div>
+              <p>Выберите чат слева</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -142,15 +263,19 @@
       <button class="modal-close" onclick="document.getElementById('modal-practice-detail').classList.remove('open')">✕</button>
     </div>
     <div class="modal-body">
-      <div class="tabs">
+      <div class="tabs" id="pr-tabs">
         <div class="tab active" onclick="switchPrTab('pr-info')">Информация</div>
         <div class="tab" onclick="switchPrTab('pr-submit')">Сдача работы</div>
+        <div class="tab" id="pr-tab-journal" style="display:none;" onclick="switchPrTab('pr-journal')">Дневник</div>
       </div>
       <div class="tab-panel active" id="pr-info">
         <div id="prd-info-body"></div>
       </div>
       <div class="tab-panel" id="pr-submit">
         <div id="prd-submit-body"></div>
+      </div>
+      <div class="tab-panel" id="pr-journal">
+        <div id="prd-journal-body"></div>
       </div>
     </div>
   </div>
@@ -165,10 +290,14 @@ if (!localStorage.getItem('token')) location.href = '../index.html';
 
 const SECTION_TITLES = {
   dashboard: 'Главная', exams: 'Экзамены',
-  practices: 'Практики', profile: 'Профиль'
+  practices: 'Практики', notifications: 'Уведомления',
+  chat: 'Чат', profile: 'Профиль'
 };
 
+let chatPollTimer = null, currentChatId = null, myUserId = null;
+
 function showSection(id) {
+  stopChatPolling();
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   const s = document.getElementById('section-' + id);
   if (s) s.classList.add('active');
@@ -179,7 +308,13 @@ function showSection(id) {
 
   if (id === 'exams') loadExams(0);
   else if (id === 'practices') loadPractices();
+  else if (id === 'notifications') loadNotifications(0);
+  else if (id === 'chat') loadChats();
   else if (id === 'profile') loadProfile();
+}
+
+function stopChatPolling() {
+  if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
 }
 
 function logout() { localStorage.clear(); location.href = '../index.html'; }
@@ -190,10 +325,29 @@ let meData = null;
 async function init() {
   try {
     meData = await api.get('/users/me');
+    myUserId = meData.id;
     document.getElementById('user-name').textContent = meData.firstName + ' ' + meData.lastName;
     document.getElementById('user-avatar').textContent = (meData.firstName || 'S')[0].toUpperCase();
   } catch {}
+  startNotifPoll();
   loadDashboard();
+}
+
+// ── Notification badge polling ──
+function startNotifPoll() {
+  updateNotifBadge();
+  setInterval(updateNotifBadge, 60000);
+}
+
+async function updateNotifBadge() {
+  try {
+    const data = await api.get('/notifications/unread-count');
+    const count = data.count ?? 0;
+    const bell = document.getElementById('bell-count');
+    const navBadge = document.getElementById('notif-nav-badge');
+    if (bell) { bell.textContent = count; bell.classList.toggle('hidden', count === 0); }
+    if (navBadge) { navBadge.textContent = count; navBadge.classList.toggle('visible', count > 0); }
+  } catch {}
 }
 
 // ── Dashboard ──
@@ -204,25 +358,44 @@ async function loadDashboard() {
 
   try {
     const dash = await api.get('/student-dashboard/me');
+    // dash: { subjects, practices, exams } — lists of StudentTaskItem
+    const subjects = dash.subjects || [];
+    const practices = dash.practices || [];
+    const exams = dash.exams || [];
+
     statsEl.innerHTML = `
-      <div class="stat-card"><div class="stat-icon blue">📝</div><div><div class="stat-val">${dash.examCount ?? '—'}</div><div class="stat-label">Экзаменов</div></div></div>
-      <div class="stat-card"><div class="stat-icon green">🔬</div><div><div class="stat-val">${dash.practiceCount ?? '—'}</div><div class="stat-label">Практик</div></div></div>
-      <div class="stat-card"><div class="stat-icon yellow">⭐</div><div><div class="stat-val">${dash.averageScore != null ? dash.averageScore.toFixed(1) : '—'}</div><div class="stat-label">Средний балл</div></div></div>
-      <div class="stat-card"><div class="stat-icon purple">✅</div><div><div class="stat-val">${dash.completedCount ?? '—'}</div><div class="stat-label">Завершено</div></div></div>
+      <div class="stat-card" style="cursor:pointer;" onclick="showSection('exams')">
+        <div class="stat-icon blue">📝</div><div><div class="stat-val">${exams.length}</div><div class="stat-label">Экзаменов</div></div>
+      </div>
+      <div class="stat-card" style="cursor:pointer;" onclick="showSection('practices')">
+        <div class="stat-icon green">🔬</div><div><div class="stat-val">${practices.length}</div><div class="stat-label">Практик</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon yellow">📚</div><div><div class="stat-val">${subjects.length}</div><div class="stat-label">Предметов</div></div>
+      </div>
     `;
 
-    if (dash.upcomingExams?.length) {
-      examsEl.innerHTML = dash.upcomingExams.map(e => `
+    // Show upcoming exams and practices
+    const upcoming = [
+      ...exams.map(e => ({ ...e, itemType: 'exam' })),
+      ...practices.map(p => ({ ...p, itemType: 'practice' }))
+    ].filter(i => i.deadline).sort((a, b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 8);
+
+    if (upcoming.length) {
+      examsEl.innerHTML = upcoming.map(item => `
         <div class="list-item">
-          <div>
-            <div style="font-weight:600;">${e.title}</div>
-            <div style="font-size:.78rem;color:var(--text-muted);">${fmtDate(e.startAt)} — ${fmtDate(e.endAt)}</div>
+          <div style="flex:1;">
+            <div style="font-weight:600;">${item.title || '—'}</div>
+            <div style="font-size:.78rem;color:var(--text-sub);">
+              ${item.itemType === 'exam' ? '📝 Экзамен' : '🔬 Практика'}
+              ${item.deadline ? ' · до ' + fmtDateOnly(item.deadline) : ''}
+            </div>
           </div>
-          ${badge(e.status)}
+          ${badge(item.type || item.itemType)}
         </div>
       `).join('');
     } else {
-      examsEl.innerHTML = '<div class="empty-state"><p>Нет ближайших экзаменов</p></div>';
+      examsEl.innerHTML = '<div class="empty-state"><p>Нет ближайших заданий</p></div>';
     }
   } catch {
     statsEl.innerHTML = '<div class="empty-state"><p>Не удалось загрузить данные</p></div>';
@@ -490,27 +663,45 @@ function switchPrTab(tabId) {
   document.querySelectorAll('#modal-practice-detail .tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('#modal-practice-detail .tab').forEach(t => t.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
-  const idx = ['pr-info','pr-submit'].indexOf(tabId);
-  document.querySelectorAll('#modal-practice-detail .tab')[idx].classList.add('active');
+  const allTabs = [...document.querySelectorAll('#modal-practice-detail .tab')];
+  const idx = allTabs.findIndex(t => t.getAttribute('onclick') && t.getAttribute('onclick').includes(tabId));
+  if (idx >= 0) allTabs[idx].classList.add('active');
+  if (tabId === 'pr-journal') loadLogbook();
 }
+
+let currentPracticeId = null;
 
 async function openPracticeDetail(item) {
   const practice = item.practice || item;
   currentParticipationId = item.participationId || item.id;
+  currentPracticeId = practice.id;
   document.getElementById('prd-title').textContent = practice.name || practice.title;
   document.getElementById('modal-practice-detail').classList.add('open');
+
+  // Show/hide journal tab based on schedulingRequired
+  const journalTab = document.getElementById('pr-tab-journal');
+  if (journalTab) journalTab.style.display = practice.schedulingRequired ? '' : 'none';
 
   const infoEl = document.getElementById('prd-info-body');
   const submitEl = document.getElementById('prd-submit-body');
 
+  const membersHtml = (item.members && item.members.length)
+    ? `<div class="form-group"><label>Команда</label><div>${item.members.map(m =>
+        `<span class="member-chip">${m.user ? m.user.firstName + ' ' + m.user.lastName : '?'} ${m.role === 'LEADER' ? '👑' : ''}</span>`
+      ).join('')}</div></div>`
+    : '';
+
   infoEl.innerHTML = `
     <div class="detail-grid">
       <div class="detail-item"><label>Режим</label><span>${badge(practice.workMode)}</span></div>
+      <div class="detail-item"><label>Статус</label><span>${badge(item.status)}</span></div>
       <div class="detail-item"><label>Дедлайн</label><span>${practice.deadline ? fmtDateOnly(practice.deadline) : '—'}</span></div>
+      <div class="detail-item"><label>Дневник</label><span>${practice.schedulingRequired ? '✓ Требуется' : 'Не требуется'}</span></div>
     </div>
     ${practice.description ? `<div class="form-group"><label>Описание</label><p style="font-size:.875rem;line-height:1.6;">${practice.description}</p></div>` : ''}
     ${practice.requirements ? `<div class="form-group"><label>Требования</label><p style="font-size:.875rem;line-height:1.6;">${practice.requirements}</p></div>` : ''}
     ${practice.resourceUrl ? `<div class="form-group"><label>Ресурс</label><a href="${practice.resourceUrl}" target="_blank" class="btn btn-outline btn-sm">🔗 Открыть</a></div>` : ''}
+    ${membersHtml}
   `;
 
   // Load submission
@@ -527,8 +718,8 @@ async function openPracticeDetail(item) {
     statusBanner = `
       <div style="background:${colors[submission.status] || '#f8fafc'};border-radius:8px;padding:12px 14px;margin-bottom:14px;">
         <div style="font-weight:600;margin-bottom:4px;">Статус: ${badge(submission.status)}</div>
-        ${submission.score != null ? `<div style="font-size:.875rem;">Оценка: <strong>${submission.score}</strong></div>` : ''}
-        ${submission.feedback ? `<div style="font-size:.875rem;margin-top:6px;">Комментарий: ${submission.feedback}</div>` : ''}
+        ${submission.attemptCount ? `<div style="font-size:.875rem;">Попыток: ${submission.attemptCount}</div>` : ''}
+        ${submission.teacherComment ? `<div style="font-size:.875rem;margin-top:6px;">Комментарий: ${submission.teacherComment}</div>` : ''}
       </div>
     `;
   }
@@ -540,7 +731,7 @@ async function openPracticeDetail(item) {
       ${statusBanner}
       <div class="form-group">
         <label>Текст работы</label>
-        <textarea id="sub-text" placeholder="Введите текст вашей работы..." style="min-height:150px;">${submission?.textContent || ''}</textarea>
+        <textarea id="sub-text" placeholder="Введите текст вашей работы..." style="min-height:150px;">${submission?.textAnswer || ''}</textarea>
       </div>
       <div style="display:flex;justify-content:flex-end;">
         <button class="btn btn-primary" onclick="submitPractice()">
@@ -557,10 +748,201 @@ async function submitPractice() {
   const text = document.getElementById('sub-text')?.value.trim();
   if (!text) { toast('Введите текст работы', 'error'); return; }
   try {
-    await api.post('/practice-submissions/participation/' + currentParticipationId + '/submit', { textContent: text });
+    await api.post('/practice-submissions/participation/' + currentParticipationId + '/submit', { textAnswer: text });
     document.getElementById('modal-practice-detail').classList.remove('open');
     loadPractices();
     toast('Работа сдана!');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Notifications ──
+let notifPage = 0;
+async function loadNotifications(page = 0) {
+  notifPage = page;
+  const el = document.getElementById('notif-list');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const data = await api.get('/notifications?page=' + page + '&size=20');
+    const items = data.content || data;
+    const total = data.totalPages || 1;
+    if (!items.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div><p>Нет уведомлений</p></div>';
+      return;
+    }
+    el.innerHTML = items.map(n => `
+      <div class="notif-item ${n.read ? '' : 'unread'}" onclick="markRead(${n.id})">
+        <div class="notif-dot ${n.read ? 'read' : ''}"></div>
+        <div style="flex:1;">
+          <div class="notif-title">${n.title || '—'}</div>
+          <div class="notif-body">${n.body || ''}</div>
+          <div class="notif-time">${fmtDate(n.createdAt)}</div>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('notif-pagination').innerHTML = paginator(page, total, 'loadNotifications');
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--danger);padding:16px">${e.message}</p>`;
+  }
+}
+
+async function markRead(id) {
+  try {
+    await api.patch('/notifications/' + id + '/read', null);
+    loadNotifications(notifPage);
+    updateNotifBadge();
+  } catch {}
+}
+
+async function markAllRead() {
+  try {
+    await api.patch('/notifications/read-all', null);
+    loadNotifications(notifPage);
+    updateNotifBadge();
+    toast('Все уведомления прочитаны');
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Chat ──
+async function loadChats() {
+  const el = document.getElementById('chat-list');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const chats = await api.get('/chats/me');
+    if (!chats.length) {
+      el.innerHTML = '<div class="empty-state" style="padding:20px;font-size:.8rem;">Нет чатов</div>';
+      return;
+    }
+    el.innerHTML = chats.map(c => `
+      <div class="chat-item ${currentChatId === c.id ? 'active' : ''}" onclick="openChat(${c.id}, '${(c.title || '').replace(/'/g,'\\'')}')">
+        <div class="chat-avatar">${(c.title || 'C')[0].toUpperCase()}</div>
+        <div style="flex:1;min-width:0;">
+          <div class="chat-item-name">${c.title || 'Чат'}</div>
+          <div class="chat-item-preview">${c.lastMessage || '...'}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--danger);padding:12px;font-size:.8rem;">${e.message}</p>`;
+  }
+}
+
+async function openChat(chatId, chatName) {
+  currentChatId = chatId;
+  stopChatPolling();
+  // Highlight active chat
+  document.querySelectorAll('.chat-item').forEach(ci => {
+    ci.classList.toggle('active', ci.getAttribute('onclick') && ci.getAttribute('onclick').includes('openChat(' + chatId + ','));
+  });
+  const main = document.getElementById('chat-main');
+  main.innerHTML = `
+    <div class="chat-header">${chatName}</div>
+    <div class="chat-messages" id="chat-messages"><div class="loader-wrap"><div class="loader"></div></div></div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Сообщение..." maxlength="300" onkeydown="if(event.key==='Enter') sendMessage()">
+      <button class="btn btn-primary" onclick="sendMessage()">→</button>
+    </div>
+  `;
+  await loadMessages(true);
+  chatPollTimer = setInterval(() => loadMessages(false), 3000);
+}
+
+let lastMsgCount = 0;
+
+async function loadMessages(scroll = false) {
+  if (!currentChatId) return;
+  try {
+    const data = await api.get('/chats/' + currentChatId + '/messages?size=50');
+    const msgs = data.content || data;
+    const el = document.getElementById('chat-messages');
+    if (!el) return;
+    if (!scroll && msgs.length === lastMsgCount) return;
+    lastMsgCount = msgs.length;
+    const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+    if (!msgs.length) {
+      el.innerHTML = '<div class="chat-empty"><p>Нет сообщений</p></div>';
+      return;
+    }
+    el.innerHTML = msgs.map(m => {
+      const mine = m.mine;
+      return `
+        <div style="display:flex;flex-direction:column;align-items:${mine ? 'flex-end' : 'flex-start'};">
+          ${!mine ? `<div class="msg-sender">${m.senderName || ''}</div>` : ''}
+          <div class="msg-bubble ${mine ? 'mine' : 'theirs'}">${m.content || ''}</div>
+        </div>
+      `;
+    }).join('');
+    if (scroll || atBottom) el.scrollTop = el.scrollHeight;
+  } catch {}
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text || !currentChatId) return;
+  input.value = '';
+  try {
+    await api.post('/chats/' + currentChatId + '/messages', { message: text });
+    await loadMessages(true);
+  } catch(e) { toast(e.message, 'error'); }
+}
+
+// ── Logbook / Journal ──
+async function loadLogbook() {
+  if (!currentPracticeId) return;
+  const el = document.getElementById('prd-journal-body');
+  el.innerHTML = '<div class="loader-wrap"><div class="loader"></div></div>';
+  try {
+    const journals = await api.get('/practice-journals/me');
+    const journal = (journals || []).find(j => j.practice && j.practice.id === currentPracticeId);
+    const entries = journal ? (journal.entries || []) : [];
+
+    const entriesHtml = entries.length
+      ? entries.map(e => `
+          <div class="journal-entry">
+            <div class="je-date">${fmtDateOnly(e.entryDate)}</div>
+            <div class="je-text">${e.content || ''}</div>
+          </div>
+        `).join('')
+      : '<div class="empty-state" style="padding:20px 0;"><div class="empty-icon">📔</div><p>Нет записей</p></div>';
+
+    el.innerHTML = `
+      <div style="margin-bottom:18px;">
+        <div class="form-group">
+          <label>Дата записи</label>
+          <input type="date" id="journal-date" value="${new Date().toISOString().split('T')[0]}">
+        </div>
+        <div class="form-group">
+          <label>Текст записи</label>
+          <textarea id="journal-text" placeholder="Опишите выполненную работу за день..." style="min-height:120px;"></textarea>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn btn-outline btn-sm" onclick="saveJournalEntry(true)">Сохранить черновик</button>
+          <button class="btn btn-primary btn-sm" onclick="saveJournalEntry(false)">Опубликовать</button>
+        </div>
+      </div>
+      <div style="font-weight:600;font-size:.85rem;margin-bottom:10px;color:var(--text-sub);text-transform:uppercase;letter-spacing:.05em;">История записей</div>
+      ${entriesHtml}
+    `;
+  } catch(e) {
+    el.innerHTML = `<p style="color:var(--danger);padding:16px">${e.message}</p>`;
+  }
+}
+
+async function saveJournalEntry(draft) {
+  const dateVal = document.getElementById('journal-date')?.value;
+  const text = document.getElementById('journal-text')?.value.trim();
+  if (!text) { toast('Введите текст записи', 'error'); return; }
+  if (!dateVal) { toast('Укажите дату', 'error'); return; }
+  try {
+    await api.post('/practice-journals', {
+      practiceId: currentPracticeId,
+      entryDate: dateVal,
+      content: text,
+      draft: draft
+    });
+    toast(draft ? 'Черновик сохранён' : 'Запись опубликована');
+    loadLogbook();
   } catch(e) { toast(e.message, 'error'); }
 }
 

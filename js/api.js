@@ -89,5 +89,13 @@ const api = {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
     });
     return handleResponse(res, t);
+  },
+  async postForm(path, formData) {
+    logRequest('POST (form)', path);
+    const t = Date.now();
+    const res = await fetch(BASE_URL + path, {
+      method: 'POST', headers: { 'Authorization': `Bearer ${getToken()}` }, body: formData
+    });
+    return handleResponse(res, t);
   }
 };

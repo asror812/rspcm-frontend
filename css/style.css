@@ -28,6 +28,7 @@ input, select, textarea { font-family: inherit; }
   --warning: #ffd60a;
   --info: #0a84ff;
   --sidebar-w: 230px;
+  --text-muted: rgba(255,255,255,.55);
 }
 
 /* ── Layout ── */
